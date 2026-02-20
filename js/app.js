@@ -1,35 +1,54 @@
-/* ---------- 음성 인식 설정 부분 수정 ---------- */
+/* ---------- 음성 인식 설정 (모바일 호환성 강화) ---------- */
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognition;
+
 if (SpeechRecognition) {
-  recognition = new SpeechRecognition();
-  recognition.continuous = true;
-  recognition.interimResults = true;
-  recognition.lang = "en-US"; // 단어가 영어이므로 영어 인식이 더 정확할 수 있습니다. 
-                              // 만약 한국어 응답을 원하시면 "ko-KR" 유지.
+    recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    // 모바일에서는 언어 설정을 명확히 해주는 것이 좋습니다.
+    recognition.lang = "en-US"; 
 
-  recognition.onresult = (event) => {
-      const transcript = event.results[event.results.length - 1][0].transcript;
-      
-      // 두 글자 이상 말하면 인식 성공으로 간주
-      if (transcript.trim().length >= 2) {
-          hasSpoken = true;
-          buttons.forEach(btn => btn.disabled = false);
-          timerEl.style.color = "#2ecc71"; // 성공 시 타이머 녹색으로
-          wordEl.style.color = "#2ecc71";  // 단어도 녹색으로 변경하여 피드백 제공
-      }
-  };
+    recognition.onresult = (event) => {
+        const transcript = event.results[event.results.length - 1][0].transcript;
+        if (transcript.trim().length >= 2) {
+            hasSpoken = true;
+            buttons.forEach(btn => btn.disabled = false);
+            timerEl.style.color = "#2ecc71";
+            wordEl.style.color = "#2ecc71";
+        }
+    };
+
+    // 모바일에서 끊김 방지를 위한 에러 핸들링 추가
+    recognition.onerror = (event) => {
+        console.error("Speech recognition error:", event.error);
+        // 에러 발생 시에도 게임이 멈추지 않도록 버튼을 수동으로 열어주는 보험 코드
+        if (event.error === 'not-allowed') {
+            alert("마이크 권한이 필요합니다. 브라우저 설정에서 마이크를 허용해주세요.");
+        }
+    };
+} else {
+    console.warn("이 브라우저는 음성 인식을 지원하지 않습니다.");
 }
 
-/* ---------- loadWord 함수 수정 (텍스트 색상 초기화 추가) ---------- */
-function loadWord() {
-  const current = words[currentIndex];
-  wordEl.textContent = current.word;
-  wordEl.style.color = "#1F3B34"; // 기본 색상으로 초기화
-  remainingEl.textContent = words.length - currentIndex;
+/* ---------- 시작 버튼 (터치 이벤트 대응) ---------- */
+startBtn.addEventListener("click", () => {
+    // 1. 오버레이 제거
+    overlay.style.display = "none";
+    hasSpoken = false;
+    
+    // 2. 문제 로드
+    loadWord();
 
-  buttons.forEach(btn => {
-      btn.style.backgroundColor = "#FF6B3D";
-      btn.disabled = true;
-  });
+    // 3. 음성 인식 시작 (try-catch로 감싸서 오류 시에도 게임 진행되게 함)
+    if (recognition) {
+        try {
+            recognition.start();
+        } catch (err) {
+            console.log("이미 인식 중이거나 오류 발생:", err);
+        }
+    }
 
-  timerEl.style.color = "#FF6B3D";
-}
+    // 4. 타이머 시작
+    startTimer();
+});
