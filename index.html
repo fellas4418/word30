@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word30 - 영어 단어 학습</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <div class="app">
+        <div class="progress">
+            남은 문제: <span id="remaining">30</span>
+        </div>
+    
+        <div class="card">
+            <div id="word" class="word">준비 중...</div>
+            <div id="timer" class="timer">10</div>
+        </div>
+    
+        <div class="pos-buttons">
+            <button data-pos="noun" disabled>명사</button>
+            <button data-pos="verb" disabled>동사</button>
+            <button data-pos="adj" disabled>형용사</button>
+        </div>
+    </div>
+    
+    <div id="startOverlay" class="overlay">
+        <div class="overlay-content">
+            <h2>word30</h2>
+            <p>단어를 소리 내어 읽어야 버튼이 활성화됩니다.</p>
+            <button id="startBtn">문제 시작</button>
+        </div>
+    </div>
+    
+    <script src="js/app.js"></script>
+    
+</body>
+</html>

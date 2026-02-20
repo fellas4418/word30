@@ -1,0 +1,90 @@
+body {
+    margin: 0;
+    font-family: 'Pretendard', sans-serif;
+    background-color: #1F3B34;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+  
+  .app {
+    width: 360px;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+  }
+  
+  .progress {
+    margin-bottom: 20px;
+    font-size: 14px;
+    opacity: 0.8;
+  }
+  
+  .card {
+    background: #F5E9D8;
+    color: #222;
+    padding: 40px 20px;
+    border-radius: 20px;
+    margin-bottom: 30px;
+  }
+  
+  .word {
+    font-size: 28px;
+    font-weight: bold;
+    margin-bottom: 20px;
+  }
+  
+  .timer {
+    font-size: 22px;
+    color: #FF6B3D;
+    font-weight: bold;
+  }
+  
+  .pos-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+  }
+  
+  .pos-buttons button {
+    flex: 1;
+    padding: 12px;
+    border-radius: 12px;
+    border: none;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    background-color: #FF6B3D;
+    color: white;
+    transition: 0.2s;
+  }
+  
+  .pos-buttons button:hover {
+    opacity: 0.8;
+  }
+  
+  .pos-buttons button:disabled {
+    background-color: #999;
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+  
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+  
+  #startBtn {
+    padding: 18px 36px;
+    font-size: 22px;
+    font-weight: bold;
+    border-radius: 14px;
+    border: none;
+  }
