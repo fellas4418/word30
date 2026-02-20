@@ -9,7 +9,7 @@ let currentIndex = 0;
 let time = 10;
 let interval;
 let wrongWords = [];
-let correctCount = 0; // 정답 개수 추적용
+let correctCount = 0; 
 let hasSpoken = false;
 
 /* ---------- DOM 요소 선택 ---------- */
@@ -20,7 +20,7 @@ const buttons = document.querySelectorAll(".pos-buttons button");
 const startBtn = document.getElementById("startBtn");
 const overlay = document.getElementById("startOverlay");
 
-/* ---------- 음성 인식 설정 ---------- */
+/* ---------- 음성 인식 설정 (검증 완화 버전) ---------- */
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition;
 
@@ -32,10 +32,12 @@ if (SpeechRecognition) {
 
   recognition.onresult = (event) => {
       const transcript = event.results[event.results.length - 1][0].transcript.toLowerCase();
-      const currentWord = words[currentIndex].word.toLowerCase();
       
-      // 사용자가 화면의 단어를 실제로 읽었는지 확인 (포함 여부 검사)
-      if (transcript.includes(currentWord)) {
+      // 디버깅용: 내가 말한 게 어떻게 인식되는지 확인 (F12 콘솔창)
+      console.log("인식된 소리:", transcript);
+
+      // [수정] 너무 엄격한 단어 비교 대신, 소리가 나면(글자가 생기면) 바로 인정
+      if (transcript.trim().length >= 1) {
           if (!hasSpoken) {
               hasSpoken = true;
               buttons.forEach(btn => btn.disabled = false);
@@ -46,7 +48,11 @@ if (SpeechRecognition) {
   };
 
   recognition.onerror = (event) => {
-      console.error("음성 인식 오류:", event.error);
+      console.error("음성 인식 에러:", event.error);
+      // 에러가 나도 게임을 계속할 수 있게 버튼을 그냥 풀어주는 보험
+      if (event.error === 'network') {
+          alert("네트워크 연결을 확인해주세요.");
+      }
   };
 }
 
@@ -66,20 +72,15 @@ function loadWord() {
   hasSpoken = false;
 }
 
-/* ---------- 타이머 실행 함수 ---------- */
+/* ---------- 타이머 및 로직 ---------- */
 function startTimer() {
   time = 10;
   timerEl.textContent = time;
-
   clearInterval(interval);
   interval = setInterval(() => {
       time--;
       timerEl.textContent = time;
-
-      if (time <= 3) {
-          timerEl.style.color = "red";
-      }
-
+      if (time <= 3) timerEl.style.color = "red";
       if (time <= 0) {
           clearInterval(interval);
           handleTimeUp();
@@ -95,53 +96,51 @@ function handleTimeUp() {
   }
 }
 
-/* ---------- 다음 문제로 이동 ---------- */
 function nextWord() {
   currentIndex++;
-
   if (currentIndex >= words.length) {
       clearInterval(interval);
       if (recognition) recognition.stop();
-      // 정답 개수와 오답 개수를 함께 표기
       alert(`학습 완료!\n✅ 정답: ${correctCount}개\n❌ 오답: ${wrongWords.length}개`);
       location.reload();
       return;
   }
-
   loadWord();
-  if (recognition) { try { recognition.start(); } catch(e) {} }
+  if (recognition) { 
+      try { recognition.start(); } catch(e) { console.log("재시작 중..."); } 
+  }
   startTimer();
 }
 
-/* ---------- 품사 선택 이벤트 ---------- */
+/* ---------- 버튼 이벤트 ---------- */
 buttons.forEach(btn => {
   btn.addEventListener("click", () => {
-      if (!hasSpoken) return; 
-
       const selected = btn.dataset.pos;
       const correct = words[currentIndex].pos;
-
       clearInterval(interval);
       if (recognition) { try { recognition.stop(); } catch(e) {} }
 
       if (selected === correct) {
           btn.style.backgroundColor = "#2ecc71"; 
-          correctCount++; // 정답 카운트 증가
+          correctCount++;
       } else {
           btn.style.backgroundColor = "#e74c3c"; 
           wrongWords.push(words[currentIndex]);
       }
-
-      setTimeout(() => {
-          nextWord();
-      }, 800);
+      setTimeout(() => nextWord(), 800);
   });
 });
 
-/* ---------- 시작 버튼 ---------- */
 startBtn.addEventListener("click", () => {
   overlay.style.display = "none";
   loadWord();
-  if (recognition) { try { recognition.start(); } catch(err) {} }
+  if (recognition) { 
+      try { 
+          recognition.start(); 
+          console.log("음성 인식 시작됨");
+      } catch(err) {
+          console.error("시작 실패:", err);
+      } 
+  }
   startTimer();
 });
