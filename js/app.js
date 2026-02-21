@@ -1,13 +1,27 @@
 /* ---------- 1. 데이터 및 상태 관리 ---------- */
+/* ---------- 1. 데이터 및 상태 관리 ---------- */
+const IS_TEST_MODE = true; // 테스트할 때는 true, 배포할 때는 false로만 바꾸세요!
+
+const allWords = [
+    { word: "abandon", pos: "verb", meaning: "포기하다" },
+    { word: "ability", pos: "noun", meaning: "능력" },
+    // ... 나머지 30개 단어들 ...
+];
+
+// 모드에 따라 단어 리스트 자동 선택
+const words = IS_TEST_MODE 
+    ? allWords.slice(0, 2) // 테스트 모드일 땐 상위 2개만
+    : allWords;            // 배포 모드일 땐 전체 30개
+    
 const words = [
-  { word: "abandon", pos: "verb", meaning: "포기하다" },
-  { word: "ability", pos: "noun", meaning: "능력" },
-  { word: "active", pos: "adj", meaning: "활동적인" },
-  { word: "benefit", pos: "noun", meaning: "이익" },
-  { word: "collect", pos: "verb", meaning: "수집하다" },
-  { word: "decline", pos: "verb", meaning: "거절하다" },
-  { word: "efficient", pos: "adj", meaning: "효율적인" },
-  { word: "factor", pos: "noun", meaning: "요인" },
+//  { word: "abandon", pos: "verb", meaning: "포기하다" },
+//  { word: "ability", pos: "noun", meaning: "능력" },
+//  { word: "active", pos: "adj", meaning: "활동적인" },
+//  { word: "benefit", pos: "noun", meaning: "이익" },
+//  { word: "collect", pos: "verb", meaning: "수집하다" },
+//  { word: "decline", pos: "verb", meaning: "거절하다" },
+//  { word: "efficient", pos: "adj", meaning: "효율적인" },
+//  { word: "factor", pos: "noun", meaning: "요인" },
   { word: "gather", pos: "verb", meaning: "모으다" },
   { word: "habit", pos: "noun", meaning: "습관" }
   // 필요한 30개 단어를 이 형식으로 추가하세요.
