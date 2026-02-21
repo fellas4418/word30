@@ -43,7 +43,7 @@ let time = 10;
 let interval;
 let hasSpoken = false;
 let isReviewMode = false;
-let sessionResults = []; 
+let sessionResults = []; // 종료 후 결과를 담을 배열
 
 /* ---------- 3. DOM 요소 ---------- */
 const wordEl = document.getElementById("word");
@@ -54,7 +54,7 @@ const startBtn = document.getElementById("startBtn");
 const overlay = document.getElementById("startOverlay");
 const cardEl = document.getElementById("wordCard");
 
-// [복구] 내 발음 확인 및 안내용 텍스트 요소
+// 내 발음 피드백 텍스트
 const feedbackEl = document.createElement("div");
 feedbackEl.style.fontSize = "16px";
 feedbackEl.style.marginTop = "15px";
@@ -69,7 +69,7 @@ if (SpeechRecognition) {
     recognition = new SpeechRecognition();
     recognition.continuous = true;
     recognition.interimResults = true;
-    recognition.lang = "ko-KR"; // 한국어 뜻 발화 감지
+    recognition.lang = "ko-KR"; // 한국어 인식
 
     recognition.onstart = () => {
         if(cardEl && !hasSpoken) cardEl.style.borderColor = "#FF6B3D"; 
@@ -77,21 +77,30 @@ if (SpeechRecognition) {
 
     recognition.onend = () => {
         if(cardEl && !hasSpoken) cardEl.style.borderColor = "transparent";
+        
+        // 🚨 안드로이드 3초 침묵 시 마이크 꺼짐 완벽 방어
+        if (!hasSpoken && time > 0) {
+            try { recognition.start(); } catch(e) {}
+        }
     };
 
     recognition.onresult = (event) => {
-        const transcript = event.results[event.results.length - 1][0].transcript.trim();
-        const currentMeaning = currentSessionWords[currentIndex].meaning;
+        let fullTranscript = "";
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+            fullTranscript += event.results[i][0].transcript;
+        }
         
-        // [복구] 내가 말한 내용 화면에 표시
-        feedbackEl.textContent = "인식 중: " + transcript;
+        // 띄어쓰기 차이로 인한 오답 방지 (예: 수집 하다 -> 수집하다)
+        const transcript = fullTranscript.replace(/\s+/g, ""); 
+        const currentMeaning = currentSessionWords[currentIndex].meaning.replace(/\s+/g, "");
+        
+        feedbackEl.textContent = "인식 중: " + fullTranscript.trim();
         feedbackEl.style.color = "#FF6B3D";
 
-        // [수정] 아무 말이나 2글자 이상이 아니라, '실제 뜻'이 포함되어야만 통과!
         if (transcript.includes(currentMeaning)) {
             if (!hasSpoken) {
                 hasSpoken = true;
-                feedbackEl.textContent = `✨ 뜻 정답: ${currentMeaning}`; 
+                feedbackEl.textContent = `✨ 뜻 정답: ${currentSessionWords[currentIndex].meaning}`; 
                 feedbackEl.style.color = "#2ecc71";
                 buttons.forEach(btn => btn.disabled = false);
                 timerEl.style.color = "#2ecc71";
@@ -106,6 +115,8 @@ if (SpeechRecognition) {
             alert("마이크 권한이 차단되어 있습니다.");
         }
     };
+} else {
+    alert("이 브라우저는 음성 인식을 지원하지 않습니다.");
 }
 
 /* ---------- 5. 핵심 로직 ---------- */
@@ -127,7 +138,7 @@ function getTargetWords() {
 
     if (reviewList.length > 0) {
         isReviewMode = true;
-        return reviewList.slice(0, 10);
+        return reviewList.slice(0, 10); // 복습 10문제
     } else {
         isReviewMode = false;
         return words;
@@ -139,10 +150,9 @@ function loadWord() {
     wordEl.textContent = current.word;
     wordEl.style.color = "#1F3B34";
     
-    // [복구] 멘트 초기화
     feedbackEl.textContent = "뜻을 소리내어 말해주세요";
     feedbackEl.style.color = "#888";
-
+    
     if(cardEl) cardEl.style.borderColor = "transparent"; 
     remainingEl.textContent = currentSessionWords.length - currentIndex;
     
@@ -171,12 +181,11 @@ function startTimer() {
 }
 
 function handleTimeUp() {
-    // 오답 기록 (뜻을 틀렸거나 말을 안 한 경우)
     sessionResults.push({
         word: currentSessionWords[currentIndex].word,
         meaning: currentSessionWords[currentIndex].meaning,
         correctPos: currentSessionWords[currentIndex].pos,
-        status: "시간 초과 (뜻 오답/발화 안함)" 
+        status: "시간 초과 (뜻 오답 또는 발화 안함)"
     });
     saveResult(currentSessionWords[currentIndex], "오답");
     nextWord();
@@ -185,13 +194,13 @@ function handleTimeUp() {
 function nextWord() {
     currentIndex++;
     if (currentIndex >= currentSessionWords.length) {
-        showResults(); 
+        showResults();
         return;
     }
     
     loadWord();
     
-    // 모바일 멈춤 방지 (유지)
+    // 삼성폰 마이크 얼어붙음 방지 로직
     if (recognition) {
         try { recognition.stop(); } catch(e) {}
         setTimeout(() => { 
@@ -214,7 +223,7 @@ function saveResult(wordObj, status) {
     localStorage.setItem('word30_history', JSON.stringify(history));
 }
 
-// 결과 화면 렌더링 (유지)
+// 결과 화면 출력 로직
 function showResults() {
     if (recognition) {
         try { recognition.stop(); } catch(e) {}
