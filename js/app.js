@@ -43,6 +43,7 @@ let time = 10;
 let interval;
 let hasSpoken = false;
 let isReviewMode = false;
+let sessionResults = []; // [복구된 기능] 종료 후 정답/오답 표시를 위한 배열
 
 /* ---------- 3. DOM 요소 ---------- */
 const wordEl = document.getElementById("word");
@@ -53,14 +54,7 @@ const startBtn = document.getElementById("startBtn");
 const overlay = document.getElementById("startOverlay");
 const cardEl = document.getElementById("wordCard");
 
-// 내 발음 확인용 텍스트
-const feedbackEl = document.createElement("div");
-feedbackEl.style.fontSize = "16px";
-feedbackEl.style.marginTop = "15px";
-feedbackEl.style.fontWeight = "bold";
-if(cardEl) cardEl.insertBefore(feedbackEl, timerEl);
-
-/* ---------- 4. 음성 인식 설정 (한국어 뜻 인식으로 완벽 수정!) ---------- */
+/* ---------- 4. 음성 인식 설정 (기획 의도 반영) ---------- */
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition;
 
@@ -68,33 +62,24 @@ if (SpeechRecognition) {
     recognition = new SpeechRecognition();
     recognition.continuous = true;
     recognition.interimResults = true;
-    // [수정1] 영어(en-US)가 아니라 한국어(ko-KR)를 듣도록 변경합니다!
-    recognition.lang = "ko-KR"; 
+    recognition.lang = "ko-KR"; // 한국어 뜻 발화 감지용
 
     recognition.onstart = () => {
         if(cardEl && !hasSpoken) cardEl.style.borderColor = "#FF6B3D"; 
     };
 
     recognition.onend = () => {
+        // 모바일 먹통(섀도우밴)의 원인이었던 강제 재시작 삭제
         if(cardEl && !hasSpoken) cardEl.style.borderColor = "transparent";
     };
 
     recognition.onresult = (event) => {
         const transcript = event.results[event.results.length - 1][0].transcript.trim();
         
-        // [수정2] 영어 단어가 아니라 '한국어 뜻'을 가져와서 비교합니다!
-        const currentMeaning = currentSessionWords[currentIndex].meaning;
-        
-        console.log("인식된 소리:", transcript); 
-        feedbackEl.textContent = "인식 중: " + transcript;
-        feedbackEl.style.color = "#FF6B3D";
-
-        // [수정3] 내가 말한 한국어에 정답 뜻이 포함되어 있는지 확인!
-        if (transcript.includes(currentMeaning)) {
+        // [핵심 기획 반영] 내용 검증 없이 '2글자 이상' 말하면 즉시 통과 및 버튼 활성화
+        if (transcript.length >= 2) {
             if (!hasSpoken) {
                 hasSpoken = true;
-                feedbackEl.textContent = `✨ 정답: ${currentMeaning}`; 
-                feedbackEl.style.color = "#2ecc71";
                 buttons.forEach(btn => btn.disabled = false);
                 timerEl.style.color = "#2ecc71";
                 wordEl.style.color = "#2ecc71";
@@ -140,8 +125,6 @@ function loadWord() {
     const current = currentSessionWords[currentIndex];
     wordEl.textContent = current.word;
     wordEl.style.color = "#1F3B34";
-    feedbackEl.textContent = "뜻을 소리내어 말해주세요";
-    feedbackEl.style.color = "#888";
     if(cardEl) cardEl.style.borderColor = "transparent"; 
     remainingEl.textContent = currentSessionWords.length - currentIndex;
     
@@ -164,12 +147,19 @@ function startTimer() {
         if (time <= 3) timerEl.style.color = "red";
         if (time <= 0) {
             clearInterval(interval);
-            handleTimeUp();
+            handleTimeUp(); // 0초 되면 강제 오답 처리
         }
     }, 1000);
 }
 
 function handleTimeUp() {
+    // [복구된 기능] 말을 안 했거나 시간이 초과된 경우 기록
+    sessionResults.push({
+        word: currentSessionWords[currentIndex].word,
+        meaning: currentSessionWords[currentIndex].meaning,
+        correctPos: currentSessionWords[currentIndex].pos,
+        status: "시간 초과 (발화 안함)"
+    });
     saveResult(currentSessionWords[currentIndex], "오답");
     nextWord();
 }
@@ -177,16 +167,13 @@ function handleTimeUp() {
 function nextWord() {
     currentIndex++;
     if (currentIndex >= currentSessionWords.length) {
-        alert("학습 완료!");
-        if (recognition) {
-            try { recognition.stop(); } catch(e) {}
-        }
-        location.reload();
+        showResults(); // [복구된 기능] 기존 alert 대신 결과창 호출
         return;
     }
     
     loadWord();
     
+    // [가장 중요] 삼성 모바일 브라우저 마이크 멈춤 방지 (유저님 원본 로직 유지)
     if (recognition) {
         try { recognition.stop(); } catch(e) {}
         setTimeout(() => { 
@@ -209,22 +196,75 @@ function saveResult(wordObj, status) {
     localStorage.setItem('word30_history', JSON.stringify(history));
 }
 
+// [복구된 기능] 학습 완료 시 결과 화면 렌더링
+function showResults() {
+    if (recognition) {
+        try { recognition.stop(); } catch(e) {}
+    }
+    
+    // 기존 앱 화면 숨기기
+    document.querySelector('.app').style.display = 'none'; 
+
+    let resultHTML = `<div class="card" style="padding: 30px 20px; text-align: left; overflow-y: auto; max-height: 80vh;">`;
+    resultHTML += `<h2 style="margin-top:0; color:#1F3B34; text-align:center;">학습 결과</h2>`;
+    resultHTML += `<ul style="list-style:none; padding:0; color:#1F3B34;">`;
+
+    sessionResults.forEach(res => {
+        let color = res.status === "정답" ? "#2ecc71" : "#e74c3c";
+        let posKo = res.correctPos === 'noun' ? '명사' : res.correctPos === 'verb' ? '동사' : '형용사';
+        
+        resultHTML += `
+            <li style="border-bottom: 2px dashed rgba(31, 59, 52, 0.2); padding: 15px 0;">
+                <strong style="font-size: 22px;">${res.word}</strong> <span style="font-size: 14px; opacity:0.8;">(${res.meaning} / ${posKo})</span><br>
+                <div style="margin-top: 5px; color:${color}; font-weight:800; font-size: 16px;">${res.status}</div>
+            </li>
+        `;
+    });
+
+    resultHTML += `</ul>`;
+    resultHTML += `<button id="restartBtn" style="width:100%; padding: 16px; border-radius: 14px; border:none; background-color:#FF6B3D; color:white; font-size:18px; font-weight:700; cursor:pointer; margin-top: 20px;">다시 시작하기</button>`;
+    resultHTML += `</div>`;
+
+    // 결과창 컨테이너 생성 및 삽입
+    let resultContainer = document.createElement('div');
+    resultContainer.className = 'app';
+    resultContainer.innerHTML = resultHTML;
+    document.body.appendChild(resultContainer);
+
+    // 다시 시작 버튼 이벤트
+    document.getElementById('restartBtn').onclick = () => location.reload();
+}
+
 /* ---------- 6. 버튼 이벤트 ---------- */
 buttons.forEach(btn => {
     btn.onclick = () => {
         if (!hasSpoken || btn.disabled) return;
         
         buttons.forEach(b => b.disabled = true); 
-        
         clearInterval(interval);
         
         const selected = btn.dataset.pos;
         const correct = currentSessionWords[currentIndex].pos;
+        
         if (selected === correct) {
             btn.style.backgroundColor = "#2ecc71";
+            // [복구된 기능] 정답 기록
+            sessionResults.push({
+                word: currentSessionWords[currentIndex].word,
+                meaning: currentSessionWords[currentIndex].meaning,
+                correctPos: correct,
+                status: "정답"
+            });
             saveResult(currentSessionWords[currentIndex], "정답");
         } else {
             btn.style.backgroundColor = "#e74c3c";
+            // [복구된 기능] 품사 오답 기록 (뜻은 현재 검증하지 않으므로 품사 오류로 처리)
+            sessionResults.push({
+                word: currentSessionWords[currentIndex].word,
+                meaning: currentSessionWords[currentIndex].meaning,
+                correctPos: correct,
+                status: "품사 오답"
+            });
             saveResult(currentSessionWords[currentIndex], "오답");
         }
         
