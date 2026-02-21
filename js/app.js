@@ -1,4 +1,4 @@
-/* ---------- 1. 데이터 설정 ---------- */
+/* ---------- 1. 데이터 및 상태 관리 ---------- */
 const IS_TEST_MODE = true; 
 
 const allWords = [
@@ -36,16 +36,14 @@ const allWords = [
 
 const words = IS_TEST_MODE ? allWords.slice(0, 2) : allWords;
 
-/* ---------- 2. 상태 관리 ---------- */
 let currentSessionWords = []; 
 let currentIndex = 0;
 let time = 10;
 let interval;
-let correctCount = 0;
 let hasSpoken = false;
 let isReviewMode = false;
 
-/* ---------- 3. DOM 요소 ---------- */
+/* ---------- 2. DOM 요소 ---------- */
 const wordEl = document.getElementById("word");
 const timerEl = document.getElementById("timer");
 const remainingEl = document.getElementById("remaining");
@@ -54,7 +52,7 @@ const startBtn = document.getElementById("startBtn");
 const overlay = document.getElementById("startOverlay");
 const cardEl = document.getElementById("wordCard");
 
-/* ---------- 4. 음성 인식 설정 ---------- */
+/* ---------- 3. 음성 인식 설정 (모바일 최적화) ---------- */
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition;
 
@@ -78,10 +76,11 @@ if (SpeechRecognition) {
             }
         }
     };
-    recognition.onerror = () => { try { recognition.stop(); } catch(e) {} };
+    // 오류 시 자동 재시작 방지 (무한 루프 방지)
+    recognition.onerror = (e) => { console.log("Speech Error:", e.error); };
 }
 
-/* ---------- 5. 핵심 로직 ---------- */
+/* ---------- 4. 게임 로직 ---------- */
 function getTargetWords() {
     const history = JSON.parse(localStorage.getItem('word30_history') || '{"wrongs":[]}');
     let reviewList = history.wrongs || [];
@@ -99,6 +98,7 @@ function getTargetWords() {
 }
 
 function loadWord() {
+    if (!currentSessionWords[currentIndex]) return;
     const current = currentSessionWords[currentIndex];
     wordEl.textContent = current.word;
     wordEl.style.color = "#1F3B34";
@@ -113,22 +113,18 @@ function loadWord() {
 }
 
 function startTimer() {
-    timerEl.textContent = time;
     clearInterval(interval);
+    timerEl.textContent = time;
     interval = setInterval(() => {
         time--;
         timerEl.textContent = time;
         if (time <= 3) timerEl.style.color = "red";
         if (time <= 0) {
             clearInterval(interval);
-            handleTimeUp();
+            saveResult(currentSessionWords[currentIndex], "오답");
+            nextWord();
         }
     }, 1000);
-}
-
-function handleTimeUp() {
-    saveResult(currentSessionWords[currentIndex], "오답");
-    nextWord();
 }
 
 function nextWord() {
@@ -139,6 +135,7 @@ function nextWord() {
         return;
     }
     loadWord();
+    // 다음 단어 넘어갈 때 마이크 재시작 (모바일 필수)
     if (recognition) {
         try {
             recognition.stop();
@@ -158,7 +155,7 @@ function saveResult(wordObj, status) {
     localStorage.setItem('word30_history', JSON.stringify(history));
 }
 
-/* ---------- 6. 버튼 이벤트 (Touch 대응) ---------- */
+/* ---------- 5. 이벤트 핸들러 ---------- */
 buttons.forEach(btn => {
     btn.onclick = () => {
         if (!hasSpoken) return;
@@ -171,24 +168,23 @@ buttons.forEach(btn => {
             btn.style.backgroundColor = "#e74c3c";
             saveResult(currentSessionWords[currentIndex], "오답");
         }
-        setTimeout(() => nextWord(), 800);
+        setTimeout(() => nextWord(), 600);
     };
 });
 
-// 시작 버튼 (가장 중요한 부분)
-startBtn.addEventListener("click", function(e) {
-    e.preventDefault(); // 기본 동작 방지
+// 시작 버튼 (가장 확실한 터치 대응)
+startBtn.addEventListener("click", function() {
     overlay.style.display = "none";
     currentSessionWords = getTargetWords();
     loadWord();
     
-    // 모바일에서 음성 인식 엔진 깨우기
     if (recognition) {
         try {
-            recognition.start();
+            recognition.stop(); // 일단 멈추고 시작하는게 안전함
+            setTimeout(() => { recognition.start(); }, 100);
         } catch(err) {
-            console.log("인식 시작 시도 중...");
+            recognition.start();
         }
     }
     startTimer();
-}, { passive: false });
+});
