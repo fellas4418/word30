@@ -41,7 +41,6 @@ let currentSessionWords = [];
 let currentIndex = 0;
 let time = 10;
 let interval;
-let correctCount = 0;
 let hasSpoken = false;
 let isReviewMode = false;
 
@@ -54,7 +53,7 @@ const startBtn = document.getElementById("startBtn");
 const overlay = document.getElementById("startOverlay");
 const cardEl = document.getElementById("wordCard");
 
-/* ---------- 4. 음성 인식 설정 ---------- */
+/* ---------- 4. 음성 인식 설정 (좀비 마이크 로직 적용) ---------- */
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition;
 
@@ -64,28 +63,53 @@ if (SpeechRecognition) {
     recognition.interimResults = true;
     recognition.lang = "en-US";
 
+    // [추가] 마이크가 정상적으로 켜졌을 때
+    recognition.onstart = () => {
+        console.log("🎤 마이크 켜짐");
+        if(cardEl) cardEl.style.borderColor = "#FF6B3D"; // 주황색 테두리 유지
+    };
+
+    // [핵심 해결] 브라우저가 몰래 마이크를 껐을 때 강제 재시작
+    recognition.onend = () => {
+        console.log("❌ 마이크 꺼짐 감지됨");
+        // 아직 말을 안 했고, 타이머가 남아있다면 즉시 다시 켬
+        if (!hasSpoken && time > 0) {
+            console.log("🔄 마이크 강제 재시작 시도");
+            try { recognition.start(); } catch(e) {}
+        }
+    };
+
     recognition.onresult = (event) => {
         const transcript = event.results[event.results.length - 1][0].transcript.toLowerCase();
         const currentWord = currentSessionWords[currentIndex].word.toLowerCase();
         
+        console.log("인식된 소리:", transcript); // 디버깅용
+
         if (transcript.includes(currentWord)) {
             if (!hasSpoken) {
                 hasSpoken = true;
                 buttons.forEach(btn => btn.disabled = false);
                 timerEl.style.color = "#2ecc71";
                 wordEl.style.color = "#2ecc71";
-                if(cardEl) cardEl.style.borderColor = "#2ecc71";
+                if(cardEl) cardEl.style.borderColor = "#2ecc71"; // 초록색 테두리로 변경
             }
         }
     };
-    recognition.onerror = () => { try { recognition.stop(); } catch(e) {} };
+
+    recognition.onerror = (event) => { 
+        console.error("마이크 에러:", event.error);
+        if (event.error === 'not-allowed') {
+            alert("마이크 권한이 차단되어 있습니다. 브라우저 설정에서 마이크를 허용해주세요.");
+        }
+    };
+} else {
+    alert("이 브라우저는 음성 인식을 지원하지 않습니다. Chrome이나 Safari를 이용해주세요.");
 }
 
 /* ---------- 5. 핵심 로직 ---------- */
 function getTargetWords() {
     let history = JSON.parse(localStorage.getItem('word30_history') || '{"wrongs":[]}');
     
-    // [버그 청소기] 300개 넘게 쌓인 쓰레기 데이터를 고유 단어 1개씩만 남기고 싹 정리
     let uniqueWrongs = [];
     let seen = new Set();
     for (let w of (history.wrongs || [])) {
@@ -100,9 +124,8 @@ function getTargetWords() {
     let reviewList = history.wrongs;
 
     if (reviewList.length > 0) {
-        alert("복습 세션을 먼저 시작합니다!");
         isReviewMode = true;
-        return reviewList.slice(0, 10); // 최대 10개만 복습
+        return reviewList.slice(0, 10);
     } else {
         isReviewMode = false;
         return words;
@@ -113,7 +136,7 @@ function loadWord() {
     const current = currentSessionWords[currentIndex];
     wordEl.textContent = current.word;
     wordEl.style.color = "#1F3B34";
-    if(cardEl) cardEl.style.borderColor = "#FF6B3D";
+    if(cardEl) cardEl.style.borderColor = "transparent"; // 시작 전엔 투명
     remainingEl.textContent = currentSessionWords.length - currentIndex;
     
     buttons.forEach(btn => {
@@ -124,7 +147,7 @@ function loadWord() {
 }
 
 function startTimer() {
-    time = isReviewMode ? 8 : 10; // [핵심] 여기서 8초 또는 10초로 무조건 리셋됨
+    time = isReviewMode ? 8 : 10;
     timerEl.textContent = time;
     timerEl.style.color = "#FF6B3D"; 
     
@@ -153,11 +176,13 @@ function nextWord() {
         return;
     }
     loadWord();
+    
     if (recognition) {
-        try {
-            recognition.stop();
-            setTimeout(() => { recognition.start(); }, 300);
-        } catch(e) {}
+        // 기존 세션을 확실히 끄고 다시 시작
+        try { recognition.stop(); } catch(e) {}
+        setTimeout(() => { 
+            try { recognition.start(); } catch(e) {} 
+        }, 300);
     }
     startTimer();
 }
@@ -179,7 +204,6 @@ buttons.forEach(btn => {
     btn.onclick = () => {
         if (!hasSpoken) return;
         
-        // [방어 로직] 버튼 클릭 시 기존 타이머와 음성 인식 즉시 강제 종료
         clearInterval(interval);
         if (recognition) try { recognition.stop(); } catch(e) {}
         
