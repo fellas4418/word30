@@ -43,7 +43,6 @@ let time = 10;
 let interval;
 let hasSpoken = false;
 let isReviewMode = false;
-let isRecognizing = false; // [추가] 마이크가 실제로 켜져있는지 추적
 
 /* ---------- 3. DOM 요소 ---------- */
 const wordEl = document.getElementById("word");
@@ -54,7 +53,14 @@ const startBtn = document.getElementById("startBtn");
 const overlay = document.getElementById("startOverlay");
 const cardEl = document.getElementById("wordCard");
 
-/* ---------- 4. 음성 인식 설정 (모바일 최적화 적용) ---------- */
+// 내 발음 확인용 텍스트 (답답함 해소용으로 남겨두었습니다)
+const feedbackEl = document.createElement("div");
+feedbackEl.style.fontSize = "16px";
+feedbackEl.style.marginTop = "15px";
+feedbackEl.style.fontWeight = "bold";
+if(cardEl) cardEl.insertBefore(feedbackEl, timerEl);
+
+/* ---------- 4. 음성 인식 설정 (유저님 원본 로직 완벽 복구) ---------- */
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition;
 
@@ -65,48 +71,41 @@ if (SpeechRecognition) {
     recognition.lang = "en-US";
 
     recognition.onstart = () => {
-        console.log("🎤 마이크 켜짐");
-        isRecognizing = true;
         if(cardEl && !hasSpoken) cardEl.style.borderColor = "#FF6B3D"; 
     };
 
-    // [수정1] 좀비 마이크 방지: onend에서 강제 재시작하지 않음
+    // [핵심] 좀비 마이크 방지를 위해 onend에서 강제 재시작하는 부분만 삭제했습니다.
     recognition.onend = () => {
-        console.log("❌ 마이크 꺼짐 감지됨");
-        isRecognizing = false;
         if(cardEl && !hasSpoken) cardEl.style.borderColor = "transparent";
     };
 
-    // [수정2] 인식률 개선: 문장 전체를 합쳐서 검사
     recognition.onresult = (event) => {
-        if (hasSpoken) return; // 이미 정답 처리되었으면 무시
-
-        let fullTranscript = "";
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-            fullTranscript += event.results[i][0].transcript.toLowerCase() + " ";
-        }
-        
-        console.log("인식된 소리:", fullTranscript); 
-
+        // [원상복구] 유저님이 작성하셨던 가장 빠르고 확실한 인식 로직
+        const transcript = event.results[event.results.length - 1][0].transcript.toLowerCase();
         const currentWord = currentSessionWords[currentIndex].word.toLowerCase();
+        
+        console.log("인식된 소리:", transcript); 
+        feedbackEl.textContent = "인식 중: " + transcript;
+        feedbackEl.style.color = "#FF6B3D";
 
-        if (fullTranscript.includes(currentWord)) {
-            hasSpoken = true;
-            buttons.forEach(btn => btn.disabled = false);
-            timerEl.style.color = "#2ecc71";
-            wordEl.style.color = "#2ecc71";
-            if(cardEl) cardEl.style.borderColor = "#2ecc71"; 
+        if (transcript.includes(currentWord)) {
+            if (!hasSpoken) {
+                hasSpoken = true;
+                feedbackEl.textContent = "✨ 인식 성공!"; 
+                feedbackEl.style.color = "#2ecc71";
+                buttons.forEach(btn => btn.disabled = false);
+                timerEl.style.color = "#2ecc71";
+                wordEl.style.color = "#2ecc71";
+                if(cardEl) cardEl.style.borderColor = "#2ecc71"; 
+            }
         }
     };
 
     recognition.onerror = (event) => { 
-        console.error("마이크 에러:", event.error);
         if (event.error === 'not-allowed') {
-            alert("마이크 권한이 차단되어 있습니다. 브라우저 설정에서 마이크를 허용해주세요.");
+            alert("마이크 권한이 차단되어 있습니다.");
         }
     };
-} else {
-    alert("이 브라우저는 음성 인식을 지원하지 않습니다. Chrome이나 Safari를 이용해주세요.");
 }
 
 /* ---------- 5. 핵심 로직 ---------- */
@@ -139,7 +138,9 @@ function loadWord() {
     const current = currentSessionWords[currentIndex];
     wordEl.textContent = current.word;
     wordEl.style.color = "#1F3B34";
-    if(cardEl) cardEl.style.borderColor = isRecognizing ? "#FF6B3D" : "transparent"; 
+    feedbackEl.textContent = "단어를 소리내어 읽어주세요";
+    feedbackEl.style.color = "#888";
+    if(cardEl) cardEl.style.borderColor = "transparent"; 
     remainingEl.textContent = currentSessionWords.length - currentIndex;
     
     buttons.forEach(btn => {
@@ -184,10 +185,12 @@ function nextWord() {
     
     loadWord();
     
-    // [수정3] 다음 단어로 넘어갈 때 마이크를 껐다 켜지 않고 유지합니다.
-    // 만약 모종의 이유로 꺼져있다면 다시 켭니다.
-    if (recognition && !isRecognizing) {
-        try { recognition.start(); } catch(e) {}
+    // [가장 중요 - 원상복구!!] 삼성폰 마이크 먹통을 막아주는 유저님의 원래 코드
+    if (recognition) {
+        try { recognition.stop(); } catch(e) {}
+        setTimeout(() => { 
+            try { recognition.start(); } catch(e) {} 
+        }, 300);
     }
     
     startTimer();
@@ -210,11 +213,10 @@ buttons.forEach(btn => {
     btn.onclick = () => {
         if (!hasSpoken || btn.disabled) return;
         
-        // [수정4] 중복 클릭 방지: 클릭 즉시 모든 버튼 비활성화
-        buttons.forEach(b => b.disabled = true);
+        // 버튼 여러번 눌리는 버그만 픽스
+        buttons.forEach(b => b.disabled = true); 
         
         clearInterval(interval);
-        // [수정3] 여기서 recognition.stop()을 제거하여 흐름이 끊기지 않게 합니다.
         
         const selected = btn.dataset.pos;
         const correct = currentSessionWords[currentIndex].pos;
@@ -236,15 +238,8 @@ startBtn.addEventListener("click", function(e) {
     currentSessionWords = getTargetWords();
     loadWord();
     
-    if (recognition && !isRecognizing) {
+    if (recognition) {
         try { recognition.start(); } catch(err) {}
     }
     startTimer();
 }, { passive: false });
-
-// [수정5] 모바일 섀도우밴 완벽 해결: 사용자 터치 시 자연스럽게 마이크 복구
-document.addEventListener("touchstart", function() {
-    if (overlay.style.display === "none" && recognition && !isRecognizing && time > 0) {
-        try { recognition.start(); } catch(err) {}
-    }
-}, { passive: true });
