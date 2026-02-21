@@ -1,4 +1,4 @@
-/* ---------- 1. 데이터 및 초기 설정 ---------- */
+/* ---------- 1. 데이터 및 상태 관리 ---------- */
 const words = [
   { word: "abandon", pos: "verb", meaning: "포기하다" },
   { word: "ability", pos: "noun", meaning: "능력" },
@@ -6,10 +6,14 @@ const words = [
   { word: "benefit", pos: "noun", meaning: "이익" },
   { word: "collect", pos: "verb", meaning: "수집하다" },
   { word: "decline", pos: "verb", meaning: "거절하다" },
-  { word: "efficient", pos: "adj", meaning: "효율적인" }
+  { word: "efficient", pos: "adj", meaning: "효율적인" },
+  { word: "factor", pos: "noun", meaning: "요인" },
+  { word: "gather", pos: "verb", meaning: "모으다" },
+  { word: "habit", pos: "noun", meaning: "습관" }
+  // 필요한 30개 단어를 이 형식으로 추가하세요.
 ];
 
-let currentSessionWords = []; // 현재 풀고 있는 문제 리스트
+let currentSessionWords = []; 
 let currentIndex = 0;
 let time = 10;
 let interval;
@@ -27,7 +31,7 @@ const startBtn = document.getElementById("startBtn");
 const overlay = document.getElementById("startOverlay");
 const cardEl = document.getElementById("wordCard");
 
-/* ---------- 3. 음성 인식 설정 (안정화 버전) ---------- */
+/* ---------- 3. 음성 인식 설정 (정밀 검증 버전) ---------- */
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition;
 
@@ -41,63 +45,59 @@ if (SpeechRecognition) {
       const transcript = event.results[event.results.length - 1][0].transcript.toLowerCase();
       const currentWord = currentSessionWords[currentIndex].word.toLowerCase();
       
-      // 발화 강제 로직: 단어가 포함되어 있는지 확인
+      // 발화 검증: 단어를 읽었는지 확인
       if (transcript.includes(currentWord)) {
           if (!hasSpoken) {
               hasSpoken = true;
-              buttons.forEach(btn => btn.disabled = false);
+              buttons.forEach(btn => btn.disabled = false); // 발화 확인 시에만 버튼 활성화
               timerEl.style.color = "#2ecc71";
               wordEl.style.color = "#2ecc71";
-              cardEl.style.borderColor = "#2ecc71";
+              if(cardEl) cardEl.style.borderColor = "#2ecc71";
           }
       }
   };
 
-  recognition.onerror = () => {
-      try { recognition.stop(); } catch(e) {}
-  };
+  recognition.onerror = () => { try { recognition.stop(); } catch(e) {} };
 }
 
-/* ---------- 4. 복습 로직 (오늘 날짜 및 주말 판별) ---------- */
+/* ---------- 4. 복습 시스템 로직 (평일/주말 구분) ---------- */
 function getTargetWords() {
   const now = new Date();
   const day = now.getDay(); // 0:일, 6:토
-  const todayStr = now.toISOString().split('T')[0];
+  const history = JSON.parse(localStorage.getItem('word30_history') || '{"wrongs":[], "daily":{}}');
   
-  // 로컬 스토리지에서 과거 오답 가져오기 (실제 DB 연결 전 단계)
-  const allHistory = JSON.parse(localStorage.getItem('word30_history') || '{}');
   let reviewList = [];
 
-  if (day === 0 || day === 6) { // 주말: 주중 전체 복습
-      Object.values(allHistory).forEach(list => reviewList.push(...list));
-      isReviewMode = true;
+  if (day === 0 || day === 6) { 
+      // 주말: 주중(월~금) 오답 전체 모음
+      reviewList = history.wrongs || [];
+      isReviewMode = reviewList.length > 0;
   } else {
-      // 평일: 최근 2일치 복습 (예시로 어제, 그저께 날짜 계산 로직 필요)
-      // 일단은 저장된 모든 오답 중 미해결된 것 위주로 구성
-      reviewList = allHistory['wrongs'] || [];
+      // 평일: 최근 2일치 오답 리스트 추출
+      reviewList = history.wrongs.slice(-10); // 임시로 최근 10개 오답 우선 복습
       isReviewMode = reviewList.length > 0;
   }
 
   if (isReviewMode) {
-      alert("복습 세션을 먼저 시작합니다!");
-      time = 8; // 복습 모드는 8초
-      return reviewList.slice(0, 10); // 최대 10개씩 복습
+      alert("복습 세션을 시작합니다. 클리어할 때까지 반복됩니다.");
+      time = 8; // 복습 모드 타이머 단축
+      return reviewList;
   } else {
       return words; // 신규 학습
   }
 }
 
-/* ---------- 5. 게임 제어 함수 ---------- */
+/* ---------- 5. 학습 제어 기능 ---------- */
 function loadWord() {
   const current = currentSessionWords[currentIndex];
   wordEl.textContent = current.word;
   wordEl.style.color = "#1F3B34";
-  cardEl.style.borderColor = "#FF6B3D";
+  if(cardEl) cardEl.style.borderColor = "#FF6B3D";
   remainingEl.textContent = currentSessionWords.length - currentIndex;
   
   buttons.forEach(btn => {
       btn.style.backgroundColor = "#FF6B3D";
-      btn.disabled = true;
+      btn.disabled = true; // 매 문제 시작 시 버튼 잠금
   });
 
   timerEl.style.color = "#FF6B3D";
@@ -119,7 +119,7 @@ function startTimer() {
 }
 
 function handleTimeUp() {
-  saveWrongWord(currentSessionWords[currentIndex], "시간초과");
+  saveResult(currentSessionWords[currentIndex], "오답", "시간초과(미발화)");
   nextWord();
 }
 
@@ -138,44 +138,59 @@ function restartMicrophone() {
   if (recognition) {
       try {
           recognition.stop();
-          setTimeout(() => recognition.start(), 250); // 모바일 하드웨어 준비 시간
+          // 모바일 하드웨어 초기화 시간을 위해 0.3초 지연 후 재시작 (마이크 끊김 방지)
+          setTimeout(() => { recognition.start(); }, 300); 
       } catch(e) {}
   }
 }
 
-/* ---------- 6. 오답 저장 (복습 시스템용) ---------- */
-function saveWrongWord(wordObj, reason) {
-  let history = JSON.parse(localStorage.getItem('word30_history') || '{"wrongs":[]}');
+/* ---------- 6. 데이터 저장 및 리포트 (학부모 공유 기초) ---------- */
+function saveResult(wordObj, status, reason) {
+  let history = JSON.parse(localStorage.getItem('word30_history') || '{"wrongs":[], "weakList":[]}');
   
-  // 중복 방지하며 Weak List에 추가
-  if (!history.wrongs.some(w => w.word === wordObj.word)) {
+  if (status === "오답") {
+      // 1) 날짜별/주간 복습용 저장
       history.wrongs.push(wordObj);
+      // 2) Weak List(누적 약점) 저장
+      const weakIdx = history.weakList.findIndex(w => w.word === wordObj.word);
+      if (weakIdx > -1) {
+          history.weakList[weakIdx].count++;
+      } else {
+          history.weakList.push({ ...wordObj, count: 1 });
+      }
+  } else if (status === "정답" && isReviewMode) {
+      // 복습 모드에서 맞추면 리스트에서 제거
+      history.wrongs = history.wrongs.filter(w => w.word !== wordObj.word);
   }
+
   localStorage.setItem('word30_history', JSON.stringify(history));
-  
-  sessionResults.push({ ...wordObj, status: "오답", reason: reason });
+  sessionResults.push({ ...wordObj, status, reason });
 }
 
-/* ---------- 7. 결과 및 UI 이벤트 ---------- */
 function showFinalResult() {
   clearInterval(interval);
   if (recognition) try { recognition.stop(); } catch(e) {}
 
-  const report = `학습 완료!\n정답: ${correctCount} / 총: ${currentSessionWords.length}`;
+  const report = `학습 종료!\n✅ 정답: ${correctCount} / ❌ 오답: ${sessionResults.filter(r=>r.status==="오답").length}\n\n*오답은 복습 리스트와 Weak List에 저장되었습니다.`;
   alert(report);
   
-  // 학부모 공유용 데이터 시뮬레이션 (콘솔 출력)
-  console.log("학부모 전송 데이터:", {
+  // 학부모 공유용 데이터 전송 시뮬레이션
+  const parentData = {
+      studentId: "fellas4418",
       date: new Date().toLocaleDateString(),
-      score: (correctCount / currentSessionWords.length * 100).toFixed(1),
-      wrongs: sessionResults.filter(r => r.status === "오답")
-  });
+      accuracy: ((correctCount / currentSessionWords.length) * 100).toFixed(1),
+      weakWords: JSON.parse(localStorage.getItem('word30_history')).weakList.sort((a,b)=>b.count-a.count).slice(0,5)
+  };
+  console.log("학부모 리포트 데이터:", parentData);
 
   location.reload();
 }
 
+/* ---------- 7. 이벤트 리스너 ---------- */
 buttons.forEach(btn => {
   btn.addEventListener("click", () => {
+      if (!hasSpoken) return; // 말을 안 했으면 클릭 무시
+
       const selected = btn.dataset.pos;
       const correct = currentSessionWords[currentIndex].pos;
 
@@ -185,10 +200,10 @@ buttons.forEach(btn => {
       if (selected === correct) {
           btn.style.backgroundColor = "#2ecc71";
           correctCount++;
-          sessionResults.push({ status: "정답" });
+          saveResult(currentSessionWords[currentIndex], "정답", "");
       } else {
           btn.style.backgroundColor = "#e74c3c";
-          saveWrongWord(currentSessionWords[currentIndex], `품사 오류(정답:${correct})`);
+          saveResult(currentSessionWords[currentIndex], "오답", `품사 오류(정답:${correct})`);
       }
       setTimeout(() => nextWord(), 800);
   });
