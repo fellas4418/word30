@@ -43,6 +43,7 @@ let time = 10;
 let interval;
 let hasSpoken = false;
 let isReviewMode = false;
+let isRecognizing = false; // [추가] 마이크가 실제로 켜져있는지 추적
 
 /* ---------- 3. DOM 요소 ---------- */
 const wordEl = document.getElementById("word");
@@ -53,7 +54,7 @@ const startBtn = document.getElementById("startBtn");
 const overlay = document.getElementById("startOverlay");
 const cardEl = document.getElementById("wordCard");
 
-/* ---------- 4. 음성 인식 설정 (좀비 마이크 로직 적용) ---------- */
+/* ---------- 4. 음성 인식 설정 (모바일 최적화 적용) ---------- */
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition;
 
@@ -63,36 +64,38 @@ if (SpeechRecognition) {
     recognition.interimResults = true;
     recognition.lang = "en-US";
 
-    // [추가] 마이크가 정상적으로 켜졌을 때
     recognition.onstart = () => {
         console.log("🎤 마이크 켜짐");
-        if(cardEl) cardEl.style.borderColor = "#FF6B3D"; // 주황색 테두리 유지
+        isRecognizing = true;
+        if(cardEl && !hasSpoken) cardEl.style.borderColor = "#FF6B3D"; 
     };
 
-    // [핵심 해결] 브라우저가 몰래 마이크를 껐을 때 강제 재시작
+    // [수정1] 좀비 마이크 방지: onend에서 강제 재시작하지 않음
     recognition.onend = () => {
         console.log("❌ 마이크 꺼짐 감지됨");
-        // 아직 말을 안 했고, 타이머가 남아있다면 즉시 다시 켬
-        if (!hasSpoken && time > 0) {
-            console.log("🔄 마이크 강제 재시작 시도");
-            try { recognition.start(); } catch(e) {}
-        }
+        isRecognizing = false;
+        if(cardEl && !hasSpoken) cardEl.style.borderColor = "transparent";
     };
 
+    // [수정2] 인식률 개선: 문장 전체를 합쳐서 검사
     recognition.onresult = (event) => {
-        const transcript = event.results[event.results.length - 1][0].transcript.toLowerCase();
-        const currentWord = currentSessionWords[currentIndex].word.toLowerCase();
-        
-        console.log("인식된 소리:", transcript); // 디버깅용
+        if (hasSpoken) return; // 이미 정답 처리되었으면 무시
 
-        if (transcript.includes(currentWord)) {
-            if (!hasSpoken) {
-                hasSpoken = true;
-                buttons.forEach(btn => btn.disabled = false);
-                timerEl.style.color = "#2ecc71";
-                wordEl.style.color = "#2ecc71";
-                if(cardEl) cardEl.style.borderColor = "#2ecc71"; // 초록색 테두리로 변경
-            }
+        let fullTranscript = "";
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+            fullTranscript += event.results[i][0].transcript.toLowerCase() + " ";
+        }
+        
+        console.log("인식된 소리:", fullTranscript); 
+
+        const currentWord = currentSessionWords[currentIndex].word.toLowerCase();
+
+        if (fullTranscript.includes(currentWord)) {
+            hasSpoken = true;
+            buttons.forEach(btn => btn.disabled = false);
+            timerEl.style.color = "#2ecc71";
+            wordEl.style.color = "#2ecc71";
+            if(cardEl) cardEl.style.borderColor = "#2ecc71"; 
         }
     };
 
@@ -136,7 +139,7 @@ function loadWord() {
     const current = currentSessionWords[currentIndex];
     wordEl.textContent = current.word;
     wordEl.style.color = "#1F3B34";
-    if(cardEl) cardEl.style.borderColor = "transparent"; // 시작 전엔 투명
+    if(cardEl) cardEl.style.borderColor = isRecognizing ? "#FF6B3D" : "transparent"; 
     remainingEl.textContent = currentSessionWords.length - currentIndex;
     
     buttons.forEach(btn => {
@@ -172,18 +175,21 @@ function nextWord() {
     currentIndex++;
     if (currentIndex >= currentSessionWords.length) {
         alert("학습 완료!");
+        if (recognition) {
+            try { recognition.stop(); } catch(e) {}
+        }
         location.reload();
         return;
     }
+    
     loadWord();
     
-    if (recognition) {
-        // 기존 세션을 확실히 끄고 다시 시작
-        try { recognition.stop(); } catch(e) {}
-        setTimeout(() => { 
-            try { recognition.start(); } catch(e) {} 
-        }, 300);
+    // [수정3] 다음 단어로 넘어갈 때 마이크를 껐다 켜지 않고 유지합니다.
+    // 만약 모종의 이유로 꺼져있다면 다시 켭니다.
+    if (recognition && !isRecognizing) {
+        try { recognition.start(); } catch(e) {}
     }
+    
     startTimer();
 }
 
@@ -202,10 +208,13 @@ function saveResult(wordObj, status) {
 /* ---------- 6. 버튼 이벤트 ---------- */
 buttons.forEach(btn => {
     btn.onclick = () => {
-        if (!hasSpoken) return;
+        if (!hasSpoken || btn.disabled) return;
+        
+        // [수정4] 중복 클릭 방지: 클릭 즉시 모든 버튼 비활성화
+        buttons.forEach(b => b.disabled = true);
         
         clearInterval(interval);
-        if (recognition) try { recognition.stop(); } catch(e) {}
+        // [수정3] 여기서 recognition.stop()을 제거하여 흐름이 끊기지 않게 합니다.
         
         const selected = btn.dataset.pos;
         const correct = currentSessionWords[currentIndex].pos;
@@ -216,6 +225,7 @@ buttons.forEach(btn => {
             btn.style.backgroundColor = "#e74c3c";
             saveResult(currentSessionWords[currentIndex], "오답");
         }
+        
         setTimeout(() => nextWord(), 800);
     };
 });
@@ -226,8 +236,15 @@ startBtn.addEventListener("click", function(e) {
     currentSessionWords = getTargetWords();
     loadWord();
     
-    if (recognition) {
+    if (recognition && !isRecognizing) {
         try { recognition.start(); } catch(err) {}
     }
     startTimer();
 }, { passive: false });
+
+// [수정5] 모바일 섀도우밴 완벽 해결: 사용자 터치 시 자연스럽게 마이크 복구
+document.addEventListener("touchstart", function() {
+    if (overlay.style.display === "none" && recognition && !isRecognizing && time > 0) {
+        try { recognition.start(); } catch(err) {}
+    }
+}, { passive: true });
