@@ -1,4 +1,4 @@
-/* ---------- 1. 데이터 및 상태 관리 ---------- */
+/* ---------- 1. 데이터 설정 ---------- */
 const IS_TEST_MODE = true; 
 
 const allWords = [
@@ -36,14 +36,16 @@ const allWords = [
 
 const words = IS_TEST_MODE ? allWords.slice(0, 2) : allWords;
 
+/* ---------- 2. 상태 관리 ---------- */
 let currentSessionWords = []; 
 let currentIndex = 0;
 let time = 10;
 let interval;
+let correctCount = 0;
 let hasSpoken = false;
 let isReviewMode = false;
 
-/* ---------- 2. DOM 요소 ---------- */
+/* ---------- 3. DOM 요소 ---------- */
 const wordEl = document.getElementById("word");
 const timerEl = document.getElementById("timer");
 const remainingEl = document.getElementById("remaining");
@@ -52,7 +54,7 @@ const startBtn = document.getElementById("startBtn");
 const overlay = document.getElementById("startOverlay");
 const cardEl = document.getElementById("wordCard");
 
-/* ---------- 3. 음성 인식 설정 (모바일 최적화) ---------- */
+/* ---------- 4. 음성 인식 설정 ---------- */
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition;
 
@@ -76,29 +78,38 @@ if (SpeechRecognition) {
             }
         }
     };
-    // 오류 시 자동 재시작 방지 (무한 루프 방지)
-    recognition.onerror = (e) => { console.log("Speech Error:", e.error); };
+    recognition.onerror = () => { try { recognition.stop(); } catch(e) {} };
 }
 
-/* ---------- 4. 게임 로직 ---------- */
+/* ---------- 5. 핵심 로직 ---------- */
 function getTargetWords() {
-    const history = JSON.parse(localStorage.getItem('word30_history') || '{"wrongs":[]}');
-    let reviewList = history.wrongs || [];
+    let history = JSON.parse(localStorage.getItem('word30_history') || '{"wrongs":[]}');
+    
+    // [버그 청소기] 300개 넘게 쌓인 쓰레기 데이터를 고유 단어 1개씩만 남기고 싹 정리
+    let uniqueWrongs = [];
+    let seen = new Set();
+    for (let w of (history.wrongs || [])) {
+        if (!seen.has(w.word)) {
+            seen.add(w.word);
+            uniqueWrongs.push(w);
+        }
+    }
+    history.wrongs = uniqueWrongs;
+    localStorage.setItem('word30_history', JSON.stringify(history));
+
+    let reviewList = history.wrongs;
 
     if (reviewList.length > 0) {
         alert("복습 세션을 먼저 시작합니다!");
         isReviewMode = true;
-        time = 8;
-        return reviewList;
+        return reviewList.slice(0, 10); // 최대 10개만 복습
     } else {
         isReviewMode = false;
-        time = 10;
         return words;
     }
 }
 
 function loadWord() {
-    if (!currentSessionWords[currentIndex]) return;
     const current = currentSessionWords[currentIndex];
     wordEl.textContent = current.word;
     wordEl.style.color = "#1F3B34";
@@ -113,18 +124,25 @@ function loadWord() {
 }
 
 function startTimer() {
-    clearInterval(interval);
+    time = isReviewMode ? 8 : 10; // [핵심] 여기서 8초 또는 10초로 무조건 리셋됨
     timerEl.textContent = time;
+    timerEl.style.color = "#FF6B3D"; 
+    
+    clearInterval(interval);
     interval = setInterval(() => {
         time--;
         timerEl.textContent = time;
         if (time <= 3) timerEl.style.color = "red";
         if (time <= 0) {
             clearInterval(interval);
-            saveResult(currentSessionWords[currentIndex], "오답");
-            nextWord();
+            handleTimeUp();
         }
     }, 1000);
+}
+
+function handleTimeUp() {
+    saveResult(currentSessionWords[currentIndex], "오답");
+    nextWord();
 }
 
 function nextWord() {
@@ -135,7 +153,6 @@ function nextWord() {
         return;
     }
     loadWord();
-    // 다음 단어 넘어갈 때 마이크 재시작 (모바일 필수)
     if (recognition) {
         try {
             recognition.stop();
@@ -148,17 +165,24 @@ function nextWord() {
 function saveResult(wordObj, status) {
     let history = JSON.parse(localStorage.getItem('word30_history') || '{"wrongs":[]}');
     if (status === "오답") {
-        history.wrongs.push(wordObj);
+        if (!history.wrongs.some(w => w.word === wordObj.word)) {
+            history.wrongs.push(wordObj);
+        }
     } else if (status === "정답" && isReviewMode) {
         history.wrongs = history.wrongs.filter(w => w.word !== wordObj.word);
     }
     localStorage.setItem('word30_history', JSON.stringify(history));
 }
 
-/* ---------- 5. 이벤트 핸들러 ---------- */
+/* ---------- 6. 버튼 이벤트 ---------- */
 buttons.forEach(btn => {
     btn.onclick = () => {
         if (!hasSpoken) return;
+        
+        // [방어 로직] 버튼 클릭 시 기존 타이머와 음성 인식 즉시 강제 종료
+        clearInterval(interval);
+        if (recognition) try { recognition.stop(); } catch(e) {}
+        
         const selected = btn.dataset.pos;
         const correct = currentSessionWords[currentIndex].pos;
         if (selected === correct) {
@@ -168,23 +192,18 @@ buttons.forEach(btn => {
             btn.style.backgroundColor = "#e74c3c";
             saveResult(currentSessionWords[currentIndex], "오답");
         }
-        setTimeout(() => nextWord(), 600);
+        setTimeout(() => nextWord(), 800);
     };
 });
 
-// 시작 버튼 (가장 확실한 터치 대응)
-startBtn.addEventListener("click", function() {
+startBtn.addEventListener("click", function(e) {
+    e.preventDefault(); 
     overlay.style.display = "none";
     currentSessionWords = getTargetWords();
     loadWord();
     
     if (recognition) {
-        try {
-            recognition.stop(); // 일단 멈추고 시작하는게 안전함
-            setTimeout(() => { recognition.start(); }, 100);
-        } catch(err) {
-            recognition.start();
-        }
+        try { recognition.start(); } catch(err) {}
     }
     startTimer();
-});
+}, { passive: false });
