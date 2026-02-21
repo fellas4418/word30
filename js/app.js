@@ -1,5 +1,5 @@
-/* ---------- 1. 개발 및 데이터 설정 ---------- */
-const IS_TEST_MODE = true; // 테스트할 땐 true, 최종 배포 시 false
+/* ---------- 1. 데이터 설정 ---------- */
+const IS_TEST_MODE = true; 
 
 const allWords = [
     { word: "abandon", pos: "verb", meaning: "포기하다" },
@@ -36,17 +36,16 @@ const allWords = [
 
 const words = IS_TEST_MODE ? allWords.slice(0, 2) : allWords;
 
-/* ---------- 2. 상태 변수 ---------- */
+/* ---------- 2. 상태 관리 ---------- */
 let currentSessionWords = []; 
 let currentIndex = 0;
 let time = 10;
 let interval;
-let sessionResults = [];
 let correctCount = 0;
 let hasSpoken = false;
 let isReviewMode = false;
 
-/* ---------- 3. DOM 요소 선택 ---------- */
+/* ---------- 3. DOM 요소 ---------- */
 const wordEl = document.getElementById("word");
 const timerEl = document.getElementById("timer");
 const remainingEl = document.getElementById("remaining");
@@ -82,9 +81,9 @@ if (SpeechRecognition) {
     recognition.onerror = () => { try { recognition.stop(); } catch(e) {} };
 }
 
-/* ---------- 5. 핵심 로직 함수 ---------- */
+/* ---------- 5. 핵심 로직 ---------- */
 function getTargetWords() {
-    const history = JSON.parse(localStorage.getItem('word30_history') || '{"wrongs":[], "weakList":[]}');
+    const history = JSON.parse(localStorage.getItem('word30_history') || '{"wrongs":[]}');
     let reviewList = history.wrongs || [];
 
     if (reviewList.length > 0) {
@@ -128,14 +127,15 @@ function startTimer() {
 }
 
 function handleTimeUp() {
-    saveResult(currentSessionWords[currentIndex], "오답", "시간초과");
+    saveResult(currentSessionWords[currentIndex], "오답");
     nextWord();
 }
 
 function nextWord() {
     currentIndex++;
     if (currentIndex >= currentSessionWords.length) {
-        showFinalResult();
+        alert("학습 완료!");
+        location.reload();
         return;
     }
     loadWord();
@@ -148,8 +148,47 @@ function nextWord() {
     startTimer();
 }
 
-function saveResult(wordObj, status, reason) {
-    let history = JSON.parse(localStorage.getItem('word30_history') || '{"wrongs":[], "weakList":[]}');
+function saveResult(wordObj, status) {
+    let history = JSON.parse(localStorage.getItem('word30_history') || '{"wrongs":[]}');
     if (status === "오답") {
         history.wrongs.push(wordObj);
     } else if (status === "정답" && isReviewMode) {
+        history.wrongs = history.wrongs.filter(w => w.word !== wordObj.word);
+    }
+    localStorage.setItem('word30_history', JSON.stringify(history));
+}
+
+/* ---------- 6. 버튼 이벤트 (Touch 대응) ---------- */
+buttons.forEach(btn => {
+    btn.onclick = () => {
+        if (!hasSpoken) return;
+        const selected = btn.dataset.pos;
+        const correct = currentSessionWords[currentIndex].pos;
+        if (selected === correct) {
+            btn.style.backgroundColor = "#2ecc71";
+            saveResult(currentSessionWords[currentIndex], "정답");
+        } else {
+            btn.style.backgroundColor = "#e74c3c";
+            saveResult(currentSessionWords[currentIndex], "오답");
+        }
+        setTimeout(() => nextWord(), 800);
+    };
+});
+
+// 시작 버튼 (가장 중요한 부분)
+startBtn.addEventListener("click", function(e) {
+    e.preventDefault(); // 기본 동작 방지
+    overlay.style.display = "none";
+    currentSessionWords = getTargetWords();
+    loadWord();
+    
+    // 모바일에서 음성 인식 엔진 깨우기
+    if (recognition) {
+        try {
+            recognition.start();
+        } catch(err) {
+            console.log("인식 시작 시도 중...");
+        }
+    }
+    startTimer();
+}, { passive: false });
