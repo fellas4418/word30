@@ -53,14 +53,14 @@ const startBtn = document.getElementById("startBtn");
 const overlay = document.getElementById("startOverlay");
 const cardEl = document.getElementById("wordCard");
 
-// 내 발음 확인용 텍스트 (답답함 해소용으로 남겨두었습니다)
+// 내 발음 확인용 텍스트
 const feedbackEl = document.createElement("div");
 feedbackEl.style.fontSize = "16px";
 feedbackEl.style.marginTop = "15px";
 feedbackEl.style.fontWeight = "bold";
 if(cardEl) cardEl.insertBefore(feedbackEl, timerEl);
 
-/* ---------- 4. 음성 인식 설정 (유저님 원본 로직 완벽 복구) ---------- */
+/* ---------- 4. 음성 인식 설정 (한국어 뜻 인식으로 완벽 수정!) ---------- */
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition;
 
@@ -68,30 +68,32 @@ if (SpeechRecognition) {
     recognition = new SpeechRecognition();
     recognition.continuous = true;
     recognition.interimResults = true;
-    recognition.lang = "en-US";
+    // [수정1] 영어(en-US)가 아니라 한국어(ko-KR)를 듣도록 변경합니다!
+    recognition.lang = "ko-KR"; 
 
     recognition.onstart = () => {
         if(cardEl && !hasSpoken) cardEl.style.borderColor = "#FF6B3D"; 
     };
 
-    // [핵심] 좀비 마이크 방지를 위해 onend에서 강제 재시작하는 부분만 삭제했습니다.
     recognition.onend = () => {
         if(cardEl && !hasSpoken) cardEl.style.borderColor = "transparent";
     };
 
     recognition.onresult = (event) => {
-        // [원상복구] 유저님이 작성하셨던 가장 빠르고 확실한 인식 로직
-        const transcript = event.results[event.results.length - 1][0].transcript.toLowerCase();
-        const currentWord = currentSessionWords[currentIndex].word.toLowerCase();
+        const transcript = event.results[event.results.length - 1][0].transcript.trim();
+        
+        // [수정2] 영어 단어가 아니라 '한국어 뜻'을 가져와서 비교합니다!
+        const currentMeaning = currentSessionWords[currentIndex].meaning;
         
         console.log("인식된 소리:", transcript); 
         feedbackEl.textContent = "인식 중: " + transcript;
         feedbackEl.style.color = "#FF6B3D";
 
-        if (transcript.includes(currentWord)) {
+        // [수정3] 내가 말한 한국어에 정답 뜻이 포함되어 있는지 확인!
+        if (transcript.includes(currentMeaning)) {
             if (!hasSpoken) {
                 hasSpoken = true;
-                feedbackEl.textContent = "✨ 인식 성공!"; 
+                feedbackEl.textContent = `✨ 정답: ${currentMeaning}`; 
                 feedbackEl.style.color = "#2ecc71";
                 buttons.forEach(btn => btn.disabled = false);
                 timerEl.style.color = "#2ecc71";
@@ -138,7 +140,7 @@ function loadWord() {
     const current = currentSessionWords[currentIndex];
     wordEl.textContent = current.word;
     wordEl.style.color = "#1F3B34";
-    feedbackEl.textContent = "단어를 소리내어 읽어주세요";
+    feedbackEl.textContent = "뜻을 소리내어 말해주세요";
     feedbackEl.style.color = "#888";
     if(cardEl) cardEl.style.borderColor = "transparent"; 
     remainingEl.textContent = currentSessionWords.length - currentIndex;
@@ -185,7 +187,6 @@ function nextWord() {
     
     loadWord();
     
-    // [가장 중요 - 원상복구!!] 삼성폰 마이크 먹통을 막아주는 유저님의 원래 코드
     if (recognition) {
         try { recognition.stop(); } catch(e) {}
         setTimeout(() => { 
@@ -213,7 +214,6 @@ buttons.forEach(btn => {
     btn.onclick = () => {
         if (!hasSpoken || btn.disabled) return;
         
-        // 버튼 여러번 눌리는 버그만 픽스
         buttons.forEach(b => b.disabled = true); 
         
         clearInterval(interval);
