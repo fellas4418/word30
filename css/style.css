@@ -1,9 +1,8 @@
-/* 기본 초기화 및 폰트 설정 */
 body {
   margin: 0;
   padding: 0;
   font-family: 'Pretendard', -apple-system, sans-serif;
-  background-color: #1F3B34; /* 딥그린 배경 */
+  background-color: #1F3B34;
   color: #fff;
   display: flex;
   justify-content: center;
@@ -21,42 +20,34 @@ body {
 .progress {
   margin-bottom: 20px;
   font-size: 16px;
-  font-weight: 500;
-  color: #F5E9D8;
   opacity: 0.9;
 }
 
-/* 베이지 카드 디자인 */
 .card {
-  background: #F5E9D8; /* 부드러운 베이지 */
+  background: #F5E9D8;
   color: #1F3B34;
   padding: 60px 20px;
   border-radius: 24px;
   margin-bottom: 40px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
+  transition: all 0.3s ease;
+  border: 4px solid transparent; /* 마이크 인식 피드백용 */
 }
 
 .word {
-  font-size: 42px; /* 단어 크기 확대 */
+  font-size: 42px;
   font-weight: 800;
-  letter-spacing: -1px;
+  margin-bottom: 10px;
 }
 
 .timer {
   font-size: 24px;
   color: #FF6B3D;
   font-weight: 700;
-  font-variant-numeric: tabular-nums; /* 숫자 떨림 방지 */
 }
 
-/* 하단 품사 버튼 */
 .pos-buttons {
   display: flex;
   gap: 12px;
-  justify-content: center;
 }
 
 .pos-buttons button {
@@ -69,45 +60,28 @@ body {
   cursor: pointer;
   background-color: #FF6B3D;
   color: white;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 0 #D9542B; /* 입체감 추가 */
-}
-
-.pos-buttons button:active {
-  transform: translateY(2px);
-  box-shadow: 0 2px 0 #D9542B;
-}
-
-.pos-buttons button:hover:not(:disabled) {
-  background-color: #ff8562;
+  box-shadow: 0 4px 0 #D9542B;
 }
 
 .pos-buttons button:disabled {
-  background-color: #7a8c88; /* 비활성화 시 딥그린 톤 유지 */
-  color: #aebdbb;
-  cursor: not-allowed;
+  background-color: #7a8c88;
   box-shadow: none;
-  transform: none;
   opacity: 0.5;
+  cursor: not-allowed;
 }
 
-/* 시작 오버레이 스타일 강화 */
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(31, 59, 52, 0.95); /* 배경색과 통일감 */
+  background: rgba(31, 59, 52, 0.98);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
 }
 
-.overlay-content {
-  text-align: center;
-}
-
 #startBtn {
-  padding: 20px 50px;
+  padding: 20px 60px;
   font-size: 24px;
   font-weight: 800;
   border-radius: 18px;
@@ -115,10 +89,4 @@ body {
   background-color: #F5E9D8;
   color: #1F3B34;
   cursor: pointer;
-  transition: transform 0.2s;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.3);
-}
-
-#startBtn:hover {
-  transform: scale(1.05);
 }

@@ -1,24 +1,26 @@
-/* ---------- 데이터 및 변수 설정 ---------- */
-// 뜻(meaning) 데이터를 추가했습니다.
+/* ---------- 데이터 설정 (30개 예시) ---------- */
 const words = [
-  { word: "abandon", pos: "verb", meaning: "포기하다, 버리다" },
+  { word: "abandon", pos: "verb", meaning: "포기하다" },
   { word: "ability", pos: "noun", meaning: "능력" },
-  { word: "active", pos: "adj", meaning: "활동적인" }
+  { word: "active", pos: "adj", meaning: "활동적인" },
+  { word: "benefit", pos: "noun", meaning: "이익" },
+  { word: "collect", pos: "verb", meaning: "수집하다" }
+  // ... 추가 단어는 이 형식으로 넣으시면 됩니다.
 ];
 
 let currentIndex = 0;
 let time = 10;
 let interval;
-let results = []; // 각 문제의 결과를 상세히 저장 (정답여부, 선택품사, 오답원인 등)
+let results = [];
 let hasSpoken = false;
 
-/* ---------- DOM 요소 선택 ---------- */
 const wordEl = document.getElementById("word");
 const timerEl = document.getElementById("timer");
 const remainingEl = document.getElementById("remaining");
 const buttons = document.querySelectorAll(".pos-buttons button");
 const startBtn = document.getElementById("startBtn");
 const overlay = document.getElementById("startOverlay");
+const cardEl = document.getElementById("wordCard");
 
 /* ---------- 음성 인식 설정 ---------- */
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -28,7 +30,11 @@ if (SpeechRecognition) {
   recognition = new SpeechRecognition();
   recognition.continuous = true;
   recognition.interimResults = true;
-  recognition.lang = "en-US"; 
+  recognition.lang = "en-US";
+
+  recognition.onstart = () => {
+      cardEl.style.borderColor = "#FF6B3D"; // 인식 시작 시 주황색 테두리
+  };
 
   recognition.onresult = (event) => {
       const transcript = event.results[event.results.length - 1][0].transcript.toLowerCase();
@@ -38,28 +44,31 @@ if (SpeechRecognition) {
               buttons.forEach(btn => btn.disabled = false);
               timerEl.style.color = "#2ecc71";
               wordEl.style.color = "#2ecc71";
+              cardEl.style.borderColor = "#2ecc71"; // 성공 시 초록색 테두리
           }
       }
   };
+
+  recognition.onerror = () => {
+      // 에러 발생 시 재시작 시도 (모바일 안정성)
+      try { recognition.stop(); } catch(e) {}
+  };
 }
 
-/* ---------- 문제 로딩 ---------- */
 function loadWord() {
   const current = words[currentIndex];
   wordEl.textContent = current.word;
   wordEl.style.color = "#1F3B34";
+  cardEl.style.borderColor = "transparent";
   remainingEl.textContent = words.length - currentIndex;
-
   buttons.forEach(btn => {
       btn.style.backgroundColor = "#FF6B3D";
       btn.disabled = true;
   });
-
   timerEl.style.color = "#FF6B3D";
   hasSpoken = false;
 }
 
-/* ---------- 타이머 ---------- */
 function startTimer() {
   time = 10;
   timerEl.textContent = time;
@@ -75,19 +84,16 @@ function startTimer() {
   }, 1000);
 }
 
-// 시간 초과 시 (음성 인식 실패로 간주)
 function handleTimeUp() {
-  if (recognition) { try { recognition.stop(); } catch(e) {} }
   results.push({
       word: words[currentIndex].word,
       meaning: words[currentIndex].meaning,
       status: "오답",
-      reason: "미발화/시간초과"
+      reason: "시간초과(미발화)"
   });
   nextWord();
 }
 
-/* ---------- 다음 문제 ---------- */
 function nextWord() {
   currentIndex++;
   if (currentIndex >= words.length) {
@@ -95,46 +101,45 @@ function nextWord() {
       return;
   }
   loadWord();
-  if (recognition) { try { recognition.start(); } catch(e) {} }
+  if (recognition) {
+      try { recognition.start(); } catch(e) {}
+  }
   startTimer();
 }
 
-/* ---------- 최종 결과 표시 ---------- */
 function showFinalResult() {
   clearInterval(interval);
-  if (recognition) recognition.stop();
+  if (recognition) try { recognition.stop(); } catch(e) {}
 
   const correctCount = results.filter(r => r.status === "정답").length;
-  let report = `학습 완료! (총 30문제 중 ${correctCount}개 정답)\n\n`;
-  report += "------- 오답 노트 -------\n";
-
-  results.forEach((res, idx) => {
-      if (res.status === "오답") {
-          report += `${idx + 1}. ${res.word} (${res.meaning})\n   사유: ${res.reason}\n`;
-      }
-  });
-
-  if (correctCount === words.length) report += "와우! 만점입니다! 🎉";
+  let report = `학습 완료!\n✅ 정답: ${correctCount}개 / ❌ 오답: ${results.length - correctCount}개\n\n`;
   
+  const fails = results.filter(r => r.status === "오답");
+  if (fails.length > 0) {
+      report += "------- 오답 노트 -------\n";
+      fails.forEach((res) => {
+          report += `• ${res.word}(${res.meaning}): ${res.reason}\n`;
+      });
+  }
+
   alert(report);
   location.reload();
 }
 
-/* ---------- 품사 버튼 클릭 ---------- */
 buttons.forEach(btn => {
   btn.addEventListener("click", () => {
       const selected = btn.dataset.pos;
       const correct = words[currentIndex].pos;
+      const posMap = { noun: "명사", verb: "동사", adj: "형용사" };
+
       clearInterval(interval);
-      if (recognition) { try { recognition.stop(); } catch(e) {} }
+      if (recognition) try { recognition.stop(); } catch(e) {}
 
       if (selected === correct) {
-          btn.style.backgroundColor = "#2ecc71"; 
+          btn.style.backgroundColor = "#2ecc71";
           results.push({ status: "정답" });
       } else {
-          btn.style.backgroundColor = "#e74c3c"; 
-          // 품사 선택 오류인 경우 원인 기록
-          const posMap = { noun: "명사", verb: "동사", adj: "형용사" };
+          btn.style.backgroundColor = "#e74c3c";
           results.push({
               word: words[currentIndex].word,
               meaning: words[currentIndex].meaning,
@@ -146,10 +151,14 @@ buttons.forEach(btn => {
   });
 });
 
-/* ---------- 시작 버튼 ---------- */
 startBtn.addEventListener("click", () => {
   overlay.style.display = "none";
   loadWord();
-  if (recognition) { try { recognition.start(); } catch(err) {} }
+  if (recognition) {
+      try {
+          recognition.stop();
+          setTimeout(() => recognition.start(), 100);
+      } catch(e) {}
+  }
   startTimer();
 });
