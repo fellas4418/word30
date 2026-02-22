@@ -1,249 +1,37 @@
-/* ---------- 1. 브랜드 컬러 & 기본 설정 ---------- */
 :root {
-  --bg-color: #F9F4E8;      /* 따뜻한 크라프트지/크림색 */
-  --text-dark: #2C3639;     /* 칠판 차콜 텍스트 */
-  --looke-orange: #FF6B4A;  /* 루크 브랜드 오렌지/코랄 */
-  --looke-orange-dark: #D95333;
-  --correct-green: #2ecc71; /* 정답 초록색 */
-  --wrong-red: #e74c3c;     /* 오답 빨간색 */
-  --box-shadow: 4px 4px 0px #2C3639; /* 아날로그 감성 하드 섀도우 */
+  --bg-color: #F9F4E8;      /* 크라프트지 배경 */
+  --text-dark: #2C3639;     /* 칠판 차콜 */
+  --looke-orange: #FF6B4A;  /* 루크 오렌지 */
+  --box-shadow: 4px 4px 0px #2C3639; /* 두들 하드 섀도우 */
 }
 
 body {
-  margin: 0;
-  padding: 0;
-  font-family: 'Pretendard', -apple-system, sans-serif;
-  background-color: var(--bg-color);
-  color: var(--text-dark);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  overflow: hidden;
+  margin: 0; background-color: var(--bg-color);
+  color: var(--text-dark); font-family: 'Pretendard', sans-serif;
+  display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden;
 }
 
-/* ---------- 2. 공통 아날로그(Doodle) UI ---------- */
 .doodle-box {
-  background-color: #FFFFFF;
-  border: 3px solid var(--text-dark);
-  border-radius: 16px;
-  box-shadow: var(--box-shadow);
-  padding: 24px;
-  margin-bottom: 20px;
+  background: #FFF; border: 3px solid var(--text-dark);
+  border-radius: 16px; box-shadow: var(--box-shadow);
+  padding: 24px; margin-bottom: 20px;
 }
 
-.text-center { text-align: center; }
-
-/* 두들 버튼 스타일 */
 .doodle-btn {
-  font-family: 'Pretendard', sans-serif;
-  background-color: #FFFFFF;
-  color: var(--text-dark);
-  border: 3px solid var(--text-dark);
-  border-radius: 12px;
-  padding: 16px 20px;
-  font-size: 18px;
-  font-weight: 800;
-  cursor: pointer;
-  box-shadow: var(--box-shadow);
-  transition: all 0.1s ease;
+  background: #FFF; border: 3px solid var(--text-dark);
+  border-radius: 12px; padding: 16px; font-weight: 800;
+  box-shadow: var(--box-shadow); cursor: pointer; transition: 0.1s;
 }
 
-/* 버튼 클릭 시 눌리는 애니메이션 (Doodle 감성) */
-.doodle-btn:active:not(:disabled) {
-  transform: translate(4px, 4px);
-  box-shadow: 0px 0px 0px var(--text-dark);
-}
+.doodle-btn:active { transform: translate(3px, 3px); box-shadow: none; }
 
-.doodle-btn:disabled {
-  background-color: #e0e0e0;
-  color: #a0a0a0;
-  border-color: #a0a0a0;
-  box-shadow: 4px 4px 0px #a0a0a0;
-  cursor: not-allowed;
-}
+.primary-btn { background: var(--looke-orange); color: #FFF; width: 100%; }
 
-.primary-btn {
-  background-color: var(--looke-orange);
-  color: #FFF;
-  width: 100%;
-  font-size: 20px;
-  padding: 20px;
-}
+.lobby-overlay { position: fixed; inset: 0; background: var(--bg-color); z-index: 1000; overflow-y: auto; display: flex; justify-content: center; }
+.lobby-container { width: 90%; max-width: 400px; padding: 40px 0; }
 
-/* ---------- 3. 퀴즈 화면 (학습 공간) ---------- */
-.app {
-  width: 90%;
-  max-width: 380px;
-  text-align: center;
-}
+.nav-item.active { color: var(--looke-orange); border-bottom: 3px solid var(--looke-orange); }
 
-.progress {
-  margin-bottom: 30px;
-}
-
-.doodle-badge {
-  background: var(--text-dark);
-  color: #FFF;
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-weight: bold;
-  font-size: 15px;
-}
-
-/* 단어 카드 */
-.card {
-  padding: 60px 20px;
-  margin-bottom: 30px;
-  transition: all 0.2s ease;
-  position: relative;
-}
-
-.word {
-  font-size: 46px;
-  font-weight: 900;
-  margin-bottom: 15px;
-  color: var(--text-dark);
-  letter-spacing: -1px;
-}
-
-.timer {
-  font-size: 28px;
-  color: var(--looke-orange);
-  font-weight: 800;
-}
-
-/* 품사 버튼 컨테이너 */
-.pos-buttons {
-  display: flex;
-  gap: 12px;
-}
-.pos-buttons button {
-  flex: 1;
-  padding: 18px 0;
-  font-size: 17px;
-}
-
-/* ---------- 4. 메인 로비(대시보드) 화면 ---------- */
-.lobby-overlay {
-  position: fixed;
-  inset: 0;
-  background-color: var(--bg-color);
-  z-index: 1000;
-  overflow-y: auto;
-  display: flex;
-  justify-content: center;
-}
-
-.lobby-container {
-  width: 90%;
-  max-width: 400px;
-  padding: 40px 0;
-}
-
-.premium-badge {
-  background-color: var(--text-dark);
-  color: #FFF;
-  font-size: 12px;
-  font-weight: bold;
-  padding: 4px 10px;
-  border-radius: 8px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-.brand-title {
-  font-size: 42px;
-  font-weight: 900;
-  margin: 15px 0 5px 0;
-  line-height: 1.1;
-  letter-spacing: -2px;
-  color: var(--text-dark);
-}
-
-.brand-subtitle {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--looke-orange);
-  margin-bottom: 40px;
-}
-
-.deco-icon {
-  width: 48px;
-  margin-bottom: 10px;
-}
-
-.main-action-card h2 { margin: 0 0 5px 0; font-size: 24px; }
-.main-action-card p { margin: 0 0 20px 0; color: #666; }
-
-.grid-2col {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 15px;
-  margin-bottom: 20px;
-}
-
-.mini-card h3 { margin: 0 0 5px 0; font-size: 18px; color: var(--looke-orange); }
-.mini-card p { margin: 0; font-weight: bold; font-size: 20px; }
-
-/* 커리큘럼 리스트 UI */
-.list-card h3 { margin: 0 0 15px 0; border-bottom: 2px dashed #ddd; padding-bottom: 10px; }
-.curriculum-list { list-style: none; padding: 0; margin: 0; }
-.curriculum-list li {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 0;
-  border-bottom: 1px solid #eee;
-  font-weight: 600;
-}
-.curriculum-list li:last-child { border-bottom: none; }
-
-.status-badge {
-  border: 2px solid var(--text-dark);
-  border-radius: 6px;
-  padding: 4px 8px;
-  font-size: 12px;
-  font-weight: bold;
-  background: #FFF;
-}
-.status-badge.complete { background-color: var(--text-dark); color: #FFF; }
-.status-badge.waiting { color: #888; border-color: #888; }
-
-/* ---------- 5. 하단 네비게이션 탭 (추가됨) ---------- */
-.bottom-nav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  background-color: #FFFFFF;
-  display: flex;
-  border-top: 3px solid var(--text-dark);
-  z-index: 1001;
-}
-
-.nav-item {
-  flex: 1;
-  text-align: center;
-  padding: 16px 0;
-  font-size: 16px;
-  font-weight: 800;
-  color: #a0a0a0;
-  cursor: pointer;
-  border-right: 3px solid var(--text-dark);
-  transition: all 0.2s;
-}
-
-.nav-item:last-child {
-  border-right: none;
-}
-
-.nav-item.active {
-  color: var(--looke-orange);
-  background-color: var(--bg-color);
-}
-
-/* 탭 바에 가리지 않게 컨테이너 하단 여백 추가 */
-.lobby-container {
-  padding-bottom: 80px; 
-}
+/* 퀴즈 카드 스타일 */
+.word { font-size: 48px; font-weight: 900; margin-bottom: 10px; }
+.timer { font-size: 28px; color: var(--looke-orange); font-weight: 800; }
