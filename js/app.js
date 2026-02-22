@@ -39,8 +39,7 @@ const wordData = {
         { word: "damage", pos: "verb", meaning: "손상시키다" },
         { word: "eager", pos: "adj", meaning: "열망하는" },
         { word: "facility", pos: "noun", meaning: "시설" }
-    ],
-    "day2": []
+    ]
 };
 
 /* ---------- 2. 상태 관리 ---------- */
@@ -52,7 +51,6 @@ let hasSpoken = false;
 let sessionResults = []; 
 let currentDayTitle = "";
 
-/* ---------- 3. DOM 요소 ---------- */
 const wordEl = document.getElementById("word");
 const timerEl = document.getElementById("timer");
 const remainingEl = document.getElementById("remaining");
@@ -60,7 +58,7 @@ const buttons = document.querySelectorAll(".pos-buttons button");
 const startOverlay = document.getElementById("startOverlay");
 const cardEl = document.getElementById("wordCard");
 
-// 피드백 요소가 없을 경우에만 생성
+// 피드백 요소 생성
 let feedbackEl = document.getElementById("speechFeedback");
 if (!feedbackEl && cardEl) {
     feedbackEl = document.createElement("div");
@@ -69,17 +67,23 @@ if (!feedbackEl && cardEl) {
     cardEl.insertBefore(feedbackEl, timerEl);
 }
 
-/* ---------- 4. 음성 인식 설정 ---------- */
+/* ---------- 3. 음성 인식 설정 (전역 하나만 사용) ---------- */
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-let recognition = new SpeechRecognition();
+const recognition = new SpeechRecognition();
 recognition.continuous = true;
 recognition.interimResults = true;
 recognition.lang = "ko-KR";
 
 recognition.onresult = (event) => {
-    let transcript = Array.from(event.results).map(res => res[0].transcript).join("").replace(/\s+/g, "");
+    let transcript = "";
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+        transcript += event.results[i][0].transcript;
+    }
+    transcript = transcript.replace(/\s+/g, "");
+    
     const target = currentSessionWords[currentIndex].meaning.replace(/\s+/g, "");
     feedbackEl.textContent = "인식 중: " + transcript;
+    
     if (transcript.includes(target) && !hasSpoken) {
         hasSpoken = true;
         feedbackEl.textContent = "✨ 정답: " + currentSessionWords[currentIndex].meaning;
@@ -88,24 +92,26 @@ recognition.onresult = (event) => {
     }
 };
 
-/* ---------- 5. 실행 및 제어 함수 (전역 공개) ---------- */
+/* ---------- 4. 핵심 실행 로직 ---------- */
+
 window.startDay = function(dayKey) {
     currentSessionWords = wordData[dayKey] || [];
     currentDayTitle = dayKey.toUpperCase();
     
     if (currentSessionWords.length === 0) {
-        alert("데이터를 준비 중입니다.");
+        alert("준비 중인 학습입니다.");
         return;
     }
 
     currentIndex = 0;
     sessionResults = [];
+    
+    // UI 전환
     startOverlay.style.display = "none";
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
     document.querySelector('.app').style.display = "block";
     
     loadWord();
-    startTimer();
-    try { recognition.start(); } catch(e) {}
 };
 
 function loadWord() {
@@ -116,6 +122,10 @@ function loadWord() {
     feedbackEl.style.color = "#888";
     buttons.forEach(btn => btn.disabled = true);
     hasSpoken = false;
+
+    // 음성 인식 및 타이머 시작
+    startTimer();
+    try { recognition.start(); } catch(e) {} 
 }
 
 function startTimer() {
@@ -134,13 +144,17 @@ function startTimer() {
 }
 
 function nextWord() {
+    // 다음으로 넘어가기 전 인식 중단
+    try { recognition.stop(); } catch(e) {}
+    
     currentIndex++;
     if (currentIndex >= currentSessionWords.length) {
         showResults();
         return;
     }
-    loadWord();
-    startTimer();
+    
+    // 약간의 시간차를 두고 다음 단어 로드 (인식기 재부팅 시간)
+    setTimeout(() => loadWord(), 300);
 }
 
 function showResults() {
@@ -153,15 +167,15 @@ function showResults() {
     let resHTML = `<div class="card doodle-box" style="text-align:center; padding: 40px 20px;">
         <h2 class="brand-title">${currentDayTitle} 완료!</h2>
         <p style="font-size:22px; font-weight:800; color:#FF6B4A;">정답률: ${acc}%</p>
-        <button onclick="location.reload()" class="doodle-btn primary-btn" style="width:100%; margin-bottom:10px;">메인으로</button>
-        <button id="kakaoBtn" class="doodle-btn" style="background:#FEE500; width:100%; color:#3C1E1E;">💬 오단완 리포트 전송</button>
+        <button onclick="location.reload()" class="doodle-btn" style="width:100%; margin-bottom:10px;">메인으로</button>
+        <button id="kakaoBtn" class="doodle-btn" style="background:#FEE500; width:100%; color:#3C1E1E;">💬 리포트 전송</button>
     </div>`;
     document.body.innerHTML += resHTML;
 
     document.getElementById('kakaoBtn').onclick = () => {
         Kakao.Share.sendDefault({
             objectType: 'text',
-            text: `📊 [Trigger Voca 리포트]\n${currentDayTitle} 오단완 완료!\n✅ 정답률: ${acc}%`,
+            text: `📊 [Trigger Voca 리포트]\n${currentDayTitle} 완료!\n✅ 정답률: ${acc}%`,
             link: { mobileWebUrl: 'https://word30.pages.dev' },
             buttons: [{
                 title: '시크릿 노션 입장',
@@ -174,6 +188,7 @@ function showResults() {
 buttons.forEach(btn => {
     btn.onclick = () => {
         if (!hasSpoken) return;
+        clearInterval(interval);
         const isCorrect = btn.dataset.pos === currentSessionWords[currentIndex].pos;
         sessionResults.push({...currentSessionWords[currentIndex], status: isCorrect ? "정답" : "오답"});
         nextWord();
