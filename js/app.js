@@ -1,3 +1,10 @@
+/* ---------- 카카오톡 SDK 초기화 ---------- */
+// 🚨 현실적인 주의사항: 아래 'YOUR_KAKAO_JAVASCRIPT_KEY' 부분에 
+// 실제 카카오 디벨로퍼스에서 발급받은 키를 넣기 전까지는 카톡 공유 버튼을 눌러도 작동하지 않습니다.
+if (typeof Kakao !== 'undefined' && !Kakao.isInitialized()) {
+    Kakao.init('20d31cb149e892d8b1bdd0a8e7306749'); 
+}
+
 /* ---------- 1. 데이터 설정 ---------- */
 const IS_TEST_MODE = true; 
 
@@ -43,7 +50,7 @@ let time = 10;
 let interval;
 let hasSpoken = false;
 let isReviewMode = false;
-let sessionResults = []; // 종료 후 결과를 담을 배열
+let sessionResults = []; 
 
 /* ---------- 3. DOM 요소 ---------- */
 const wordEl = document.getElementById("word");
@@ -69,7 +76,7 @@ if (SpeechRecognition) {
     recognition = new SpeechRecognition();
     recognition.continuous = true;
     recognition.interimResults = true;
-    recognition.lang = "ko-KR"; // 한국어 인식
+    recognition.lang = "ko-KR"; 
 
     recognition.onstart = () => {
         if(cardEl && !hasSpoken) cardEl.style.borderColor = "#FF6B3D"; 
@@ -78,7 +85,7 @@ if (SpeechRecognition) {
     recognition.onend = () => {
         if(cardEl && !hasSpoken) cardEl.style.borderColor = "transparent";
         
-        // 🚨 안드로이드 3초 침묵 시 마이크 꺼짐 완벽 방어
+        // 안드로이드 3초 침묵 시 마이크 꺼짐 완벽 방어
         if (!hasSpoken && time > 0) {
             try { recognition.start(); } catch(e) {}
         }
@@ -90,7 +97,7 @@ if (SpeechRecognition) {
             fullTranscript += event.results[i][0].transcript;
         }
         
-        // 띄어쓰기 차이로 인한 오답 방지 (예: 수집 하다 -> 수집하다)
+        // 띄어쓰기 차이로 인한 오답 방지
         const transcript = fullTranscript.replace(/\s+/g, ""); 
         const currentMeaning = currentSessionWords[currentIndex].meaning.replace(/\s+/g, "");
         
@@ -138,7 +145,7 @@ function getTargetWords() {
 
     if (reviewList.length > 0) {
         isReviewMode = true;
-        return reviewList.slice(0, 10); // 복습 10문제
+        return reviewList.slice(0, 10); 
     } else {
         isReviewMode = false;
         return words;
@@ -223,7 +230,7 @@ function saveResult(wordObj, status) {
     localStorage.setItem('word30_history', JSON.stringify(history));
 }
 
-// 결과 화면 출력 로직
+// 🚨 [변경됨] 결과 화면 출력 로직 (정답률 계산 및 카카오 공유 버튼 추가)
 function showResults() {
     if (recognition) {
         try { recognition.stop(); } catch(e) {}
@@ -231,8 +238,19 @@ function showResults() {
     
     document.querySelector('.app').style.display = 'none'; 
 
+    // 정답률 계산
+    const totalWords = sessionResults.length;
+    const correctWords = sessionResults.filter(res => res.status === "정답").length;
+    const accuracy = totalWords > 0 ? Math.round((correctWords / totalWords) * 100) : 0;
+
     let resultHTML = `<div class="card" style="padding: 30px 20px; text-align: left; overflow-y: auto; max-height: 80vh;">`;
     resultHTML += `<h2 style="margin-top:0; color:#1F3B34; text-align:center;">학습 결과</h2>`;
+    
+    // 점수 요약
+    resultHTML += `<div style="text-align:center; margin-bottom: 20px; font-size: 18px; font-weight: 800; color: #FF6B3D;">
+        정답률: ${correctWords}/${totalWords} (${accuracy}%)
+    </div>`;
+
     resultHTML += `<ul style="list-style:none; padding:0; color:#1F3B34;">`;
 
     sessionResults.forEach(res => {
@@ -248,7 +266,13 @@ function showResults() {
     });
 
     resultHTML += `</ul>`;
-    resultHTML += `<button id="restartBtn" style="width:100%; padding: 16px; border-radius: 14px; border:none; background-color:#FF6B3D; color:white; font-size:18px; font-weight:700; cursor:pointer; margin-top: 20px;">다시 시작하기</button>`;
+    
+    // 다시 시작 버튼
+    resultHTML += `<button id="restartBtn" style="width:100%; padding: 16px; border-radius: 14px; border:none; background-color:#FF6B3D; color:white; font-size:18px; font-weight:700; cursor:pointer; margin-top: 20px; box-shadow: 4px 4px 0px #2C3639;">다시 시작하기</button>`;
+    
+    // 카카오톡 공유 버튼
+    resultHTML += `<button id="kakaoShareBtn" style="width:100%; padding: 16px; border-radius: 14px; border:none; background-color:#FEE500; color:#3C1E1E; font-size:18px; font-weight:800; cursor:pointer; margin-top: 15px; box-shadow: 4px 4px 0px #2C3639;">💬 오단완 리포트 카톡 전송</button>`;
+    
     resultHTML += `</div>`;
 
     let resultContainer = document.createElement('div');
@@ -256,7 +280,40 @@ function showResults() {
     resultContainer.innerHTML = resultHTML;
     document.body.appendChild(resultContainer);
 
+    // 이벤트 리스너
     document.getElementById('restartBtn').onclick = () => location.reload();
+    
+    document.getElementById('kakaoShareBtn').onclick = () => {
+        if (!Kakao.isInitialized()) {
+            alert("카카오 공유 기능이 설정되지 않았습니다. 개발자 키를 확인해주세요.");
+            return;
+        }
+
+        Kakao.Share.sendDefault({
+            objectType: 'text',
+            text: `📊 [오단완 학습 리포트]\n학생의 오늘의 단어 학습이 완료되었습니다!\n\n✅ 정답률: ${correctWords}/${totalWords} (${accuracy}%)\n\n----------------------\n🔒 [루크 쌤의 시크릿 영문법 라운지]\n영단어를 외워도 문장 해석이 안 된다면?\n1:1 과외 대기생을 위한 '3시간 코어 영문법'\n👉 아래 버튼을 눌러 라운지에 입장하세요.`,
+            link: {
+                mobileWebUrl: 'https://word30.pages.dev',
+                webUrl: 'https://word30.pages.dev',
+            },
+            buttons: [
+                {
+                    title: '시크릿 노션 VOD 입장',
+                    link: {
+                        mobileWebUrl: 'https://www.notion.so/3-26ea81fd05e580869538e10685e3cdf2', // 🚨 실제 노션 링크로 변경 필수
+                        webUrl: 'https://www.notion.so/3-26ea81fd05e580869538e10685e3cdf2',
+                    },
+                },
+                {
+                    title: '나도 TRIGGER 영단어 앱 써보기',
+                    link: {
+                        mobileWebUrl: 'https://word30.pages.dev',
+                        webUrl: 'https://word30.pages.dev',
+                    },
+                }
+            ]
+        });
+    };
 }
 
 /* ---------- 6. 버튼 이벤트 ---------- */
@@ -296,7 +353,10 @@ buttons.forEach(btn => {
 
 startBtn.addEventListener("click", function(e) {
     e.preventDefault(); 
-    overlay.style.display = "none";
+    // 탭 UI에서 퀴즈 앱 화면으로 전환
+    document.getElementById('startOverlay').style.display = "none";
+    document.querySelector('.app').style.display = "block";
+    
     currentSessionWords = getTargetWords();
     loadWord();
     
