@@ -1,29 +1,26 @@
-/* ---------- 카카오톡 SDK 초기화 ---------- */
+// 카카오 초기화
 if (typeof Kakao !== 'undefined' && !Kakao.isInitialized()) {
-    Kakao.init('fbb1520306ffaad0a882e993109a801c'); 
+    Kakao.init('20d31cb149e892d8b1bdd0a8e7306749'); 
 }
 
-/* ---------- 1. 데이터 설정 (Day 1: 33개 풀세트) ---------- */
+/* ---------- 1. 데이터 설정 (Day별 분리) ---------- */
 const wordData = {
-    "day1": [
-        { word: "abandon", pos: "verb", meaning: "포기하다" }, { word: "ability", pos: "noun", meaning: "능력" },
-        { word: "active", pos: "adj", meaning: "활동적인" }, { word: "benefit", pos: "noun", meaning: "이익" },
-        { word: "collect", pos: "verb", meaning: "수집하다" }, { word: "decline", pos: "verb", meaning: "거절하다" },
-        { word: "efficient", pos: "adj", meaning: "효율적인" }, { word: "factor", pos: "noun", meaning: "요인" },
-        { word: "gather", pos: "verb", meaning: "모으다" }, { word: "habit", pos: "noun", meaning: "습관" },
-        { word: "ignore", pos: "verb", meaning: "무시하다" }, { word: "joint", pos: "adj", meaning: "공동의" },
-        { word: "knowledge", pos: "noun", meaning: "지식" }, { word: "labor", pos: "noun", meaning: "노동" },
-        { word: "maintain", pos: "verb", meaning: "유지하다" }, { word: "notice", pos: "verb", meaning: "알아차리다" },
-        { word: "object", pos: "noun", meaning: "물체" }, { word: "patient", pos: "adj", meaning: "인내심있는" },
-        { word: "quality", pos: "noun", meaning: "품질" }, { word: "rare", pos: "adj", meaning: "드문" },
-        { word: "seek", pos: "verb", meaning: "찾다" }, { word: "target", pos: "noun", meaning: "목표" },
-        { word: "urban", pos: "adj", meaning: "도시의" }, { word: "value", pos: "noun", meaning: "가치" },
-        { word: "waste", pos: "verb", meaning: "낭비하다" }, { word: "yield", pos: "verb", meaning: "생산하다" },
-        { word: "zeal", pos: "noun", meaning: "열정" }, { word: "accurate", pos: "adj", meaning: "정확한" },
-        { word: "believe", pos: "verb", meaning: "믿다" }, { word: "capacity", pos: "noun", meaning: "용량" },
-        { word: "damage", pos: "verb", meaning: "손상시키다" }, { word: "eager", pos: "adj", meaning: "열망하는" },
-        { word: "facility", pos: "noun", meaning: "시설" }
-    ]
+    "day1": {
+        title: "Day 1. 기초 필수 단어",
+        list: [
+            { word: "abandon", pos: "verb", meaning: "포기하다" },
+            { word: "ability", pos: "noun", meaning: "능력" },
+            { word: "active", pos: "adj", meaning: "활동적인" }
+        ]
+    },
+    "day2": {
+        title: "Day 2. 상태와 동작",
+        list: [
+            { word: "benefit", pos: "noun", meaning: "이익" },
+            { word: "collect", pos: "verb", meaning: "수집하다" },
+            { word: "decline", pos: "verb", meaning: "거절하다" }
+        ]
+    }
 };
 
 /* ---------- 2. 상태 관리 ---------- */
@@ -32,116 +29,130 @@ let currentIndex = 0;
 let time = 10;
 let interval;
 let hasSpoken = false;
-let sessionResults = []; 
-let currentDayTitle = "";
+let sessionResults = [];
+let selectedDayId = "day1";
 
+/* ---------- 3. DOM 요소 ---------- */
 const wordEl = document.getElementById("word");
 const timerEl = document.getElementById("timer");
 const remainingEl = document.getElementById("remaining");
 const buttons = document.querySelectorAll(".pos-buttons button");
+const dayListEl = document.getElementById("dayList");
+const overlay = document.getElementById("startOverlay");
 const cardEl = document.getElementById("wordCard");
 
-// 피드백 요소 생성
-let feedbackEl = document.getElementById("speechFeedback");
-if (!feedbackEl && cardEl) {
-    feedbackEl = document.createElement("div");
-    feedbackEl.id = "speechFeedback";
-    feedbackEl.style.cssText = "font-size:16px; margin-top:15px; font-weight:bold; color:#888; text-align:center;";
-    cardEl.insertBefore(feedbackEl, timerEl);
+/* ---------- 4. 초기 UI 세팅 (Day 리스트 생성) ---------- */
+function initLobby() {
+    dayListEl.innerHTML = "";
+    Object.keys(wordData).forEach(dayId => {
+        const dayInfo = wordData[dayId];
+        const li = document.createElement("li");
+        li.innerHTML = `
+            <span>${dayInfo.title} (${dayInfo.list.length})</span>
+            <button class="status-badge start-day-btn" onclick="startStudy('${dayId}')">시작</button>
+        `;
+        dayListEl.appendChild(li);
+    });
 }
 
-/* ---------- 3. 음성 인식 설정 ---------- */
-const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-const recognition = new SpeechRecognition();
-recognition.continuous = true;
-recognition.interimResults = true;
-recognition.lang = "ko-KR";
-
-recognition.onresult = (event) => {
-    let transcript = Array.from(event.results).map(res => res[0].transcript).join("").replace(/\s+/g, "");
-    const target = currentSessionWords[currentIndex].meaning.replace(/\s+/g, "");
-    feedbackEl.textContent = "인인식 중: " + transcript;
-    
-    if (transcript.includes(target) && !hasSpoken) {
-        hasSpoken = true;
-        feedbackEl.textContent = "✨ 정답: " + currentSessionWords[currentIndex].meaning;
-        feedbackEl.style.color = "#2ecc71";
-        buttons.forEach(btn => btn.disabled = false);
-    }
-};
-
-/* ---------- 4. 제어 함수 ---------- */
-window.startDay = function(dayKey) {
-    currentSessionWords = wordData[dayKey] || [];
-    currentDayTitle = dayKey.toUpperCase();
-    if (currentSessionWords.length === 0) return alert("데이터 준비 중");
-
+function startStudy(dayId) {
+    selectedDayId = dayId;
+    currentSessionWords = wordData[dayId].list;
     currentIndex = 0;
     sessionResults = [];
-    document.getElementById("tab1").style.display = "none";
-    document.querySelector(".app").style.display = "block";
+    
+    overlay.style.display = "none";
+    document.querySelector('.app').style.display = "block";
     
     loadWord();
-};
+    if (recognition) { try { recognition.start(); } catch(e) {} }
+    startTimer();
+}
+
+/* ---------- 5. 음성 인식 및 퀴즈 로직 (기존 로직 보존) ---------- */
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognition;
+if (SpeechRecognition) {
+    recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = "ko-KR";
+    recognition.onresult = (event) => {
+        let transcript = "";
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+            transcript += event.results[i][0].transcript;
+        }
+        const currentMeaning = currentSessionWords[currentIndex].meaning.replace(/\s+/g, "");
+        if (transcript.replace(/\s+/g, "").includes(currentMeaning)) {
+            if (!hasSpoken) {
+                hasSpoken = true;
+                buttons.forEach(btn => btn.disabled = false);
+                timerEl.style.color = "#2ecc71";
+                if(cardEl) cardEl.style.borderColor = "#2ecc71";
+            }
+        }
+    };
+    recognition.onend = () => { if (!hasSpoken && time > 0) try { recognition.start(); } catch(e) {} };
+}
 
 function loadWord() {
     const current = currentSessionWords[currentIndex];
     wordEl.textContent = current.word;
     remainingEl.textContent = currentSessionWords.length - currentIndex;
-    feedbackEl.textContent = "뜻을 말해주세요";
-    feedbackEl.style.color = "#888";
-    buttons.forEach(btn => btn.disabled = true);
+    buttons.forEach(btn => {
+        btn.style.backgroundColor = "#FF6B3D";
+        btn.disabled = true;
+    });
     hasSpoken = false;
-
-    startTimer();
-    try { recognition.start(); } catch(e) {}
+    if(cardEl) cardEl.style.borderColor = "transparent";
 }
 
 function startTimer() {
     time = 10;
     timerEl.textContent = time;
+    timerEl.style.color = "#FF6B3D";
     clearInterval(interval);
     interval = setInterval(() => {
         time--;
         timerEl.textContent = time;
-        if (time <= 0) {
-            clearInterval(interval);
-            sessionResults.push({...currentSessionWords[currentIndex], status: "시간초과"});
-            nextWord();
-        }
+        if (time <= 0) { clearInterval(interval); handleTimeUp(); }
     }, 1000);
 }
 
+function handleTimeUp() {
+    sessionResults.push({ word: currentSessionWords[currentIndex].word, status: "시간초과" });
+    nextWord();
+}
+
 function nextWord() {
-    try { recognition.stop(); } catch(e) {}
     currentIndex++;
-    if (currentIndex >= currentSessionWords.length) return showResults();
-    setTimeout(() => loadWord(), 300); // 엔진 재부팅 시간
+    if (currentIndex >= currentSessionWords.length) { showResults(); return; }
+    loadWord();
+    startTimer();
 }
 
 function showResults() {
-    try { recognition.stop(); } catch(e) {}
+    if (recognition) try { recognition.stop(); } catch(e) {}
     document.querySelector('.app').style.display = 'none';
-    const correct = sessionResults.filter(r => r.status === "정답").length;
-    const total = sessionResults.length;
-    const acc = Math.round((correct / total) * 100) || 0;
+    const correctWords = sessionResults.filter(r => r.status === "정답").length;
+    const total = currentSessionWords.length;
+    const accuracy = Math.round((correctWords / total) * 100);
 
-    document.body.innerHTML += `<div class="card doodle-box" style="text-align:center; padding: 40px 20px;">
-        <h2>${currentDayTitle} 완료!</h2>
-        <p style="font-size:24px; color:#FF6B4A;">정답률: ${acc}%</p>
-        <button onclick="location.reload()" class="doodle-btn" style="width:100%; margin-bottom:10px;">메인으로</button>
-        <button id="kakaoBtn" class="doodle-btn" style="background:#FEE500; width:100%; color:#3C1E1E;">💬 리포트 전송</button>
+    let resultHTML = `<div class="card doodle-box" style="text-align:center; padding:40px 20px;">
+        <h2>학습 완료!</h2>
+        <p style="font-size:24px; font-weight:800; color:#FF6B3D;">정답률: ${correctWords}/${total} (${accuracy}%)</p>
+        <button onclick="location.reload()" class="doodle-btn primary-btn" style="margin-top:20px;">홈으로 가기</button>
+        <button id="kakaoShareBtn" class="doodle-btn" style="width:100%; margin-top:10px; background:#FEE500;">💬 오단완 리포트 전송</button>
     </div>`;
-
-    document.getElementById('kakaoBtn').onclick = () => {
+    
+    document.body.innerHTML += resultHTML;
+    
+    document.getElementById('kakaoShareBtn').onclick = () => {
         Kakao.Share.sendDefault({
             objectType: 'text',
-            text: `📊 [Trigger Voca 리포트]\n${currentDayTitle} 오단완!\n✅ 정답률: ${acc}%`,
-            link: { mobileWebUrl: 'https://word30.pages.dev' },
-            buttons: [{
-                title: '시크릿 노션 입장',
-                link: { mobileWebUrl: 'https://www.notion.so/3-26ea81fd05e580869538e10685e3cdf2?openExternalBrowser=1' }
-            }]
+            text: `📊 [Trigger Voca 오단완 리포트]\n오늘의 학습을 완료했습니다!\n\n✅ 정답률: ${correctWords}/${total} (${accuracy}%)\n\n----------------------\n🔒 [루크 쌤의 시크릿 영문법 라운지]\n👉 아래 버튼을 눌러 입장하세요.`,
+            link: { mobileWebUrl: 'https://word30.pages.dev', webUrl: 'https://word30.pages.dev' },
+            buttons: [{ title: '시크릿 라운지 입장', link: { mobileWebUrl: 'https://대표님의_노션_주소' } }]
         });
     };
 }
@@ -149,8 +160,17 @@ function showResults() {
 buttons.forEach(btn => {
     btn.onclick = () => {
         if (!hasSpoken) return;
-        const isCorrect = btn.dataset.pos === currentSessionWords[currentIndex].pos;
-        sessionResults.push({...currentSessionWords[currentIndex], status: isCorrect ? "정답" : "오답"});
-        nextWord();
+        const selected = btn.dataset.pos;
+        const correct = currentSessionWords[currentIndex].pos;
+        if (selected === correct) {
+            btn.style.backgroundColor = "#2ecc71";
+            sessionResults.push({ word: currentSessionWords[currentIndex].word, status: "정답" });
+        } else {
+            btn.style.backgroundColor = "#e74c3c";
+            sessionResults.push({ word: currentSessionWords[currentIndex].word, status: "오답" });
+        }
+        setTimeout(() => nextWord(), 600);
     };
 });
+
+initLobby();

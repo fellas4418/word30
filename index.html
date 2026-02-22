@@ -3,64 +3,81 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trigger Voca</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Trigger Voca - 루크쌤의 영문법 단어장</title>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <nav class="tab-menu">
-        <button class="tab-btn active" onclick="openTab(event, 'tab1')">단어장 홈</button>
-        <button class="tab-btn" onclick="openTab(event, 'tab2')">영문법 강의</button>
-    </nav>
 
-    <div id="tab1" class="tab-content active">
-        <div class="doodle-box list-card">
-            <h2 class="brand-title">Trigger Voca</h2>
-            <h3>학습 커리큘럼</h3>
-            <ul class="curriculum-list">
-                <li onclick="startDay('day1')" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center; padding:15px; border-bottom:1px solid #eee;">
-                    <span>Day 1. 기초 필수 단어 (33)</span>
-                    <button class="status-badge" style="background:#FF6B3D; color:white; border:none; padding:5px 10px; border-radius:5px;">시작</button>
-                </li>
-                <li style="display:flex; justify-content:space-between; align-items:center; padding:15px; opacity:0.5;">
-                    <span>Day 2. 상태와 동작 (준비중)</span>
-                    <button class="status-badge">대기</button>
-                </li>
-            </ul>
+    <div class="app" style="display: none;">
+        <div class="progress">
+            <span class="doodle-badge">남은 문제: <span id="remaining">0</span></span>
+        </div>
+        <div class="card doodle-box" id="wordCard">
+            <div id="word" class="word">준비 중...</div>
+            <div id="timer" class="timer">10</div>
+        </div>
+        <div class="pos-buttons">
+            <button data-pos="noun" class="doodle-btn" disabled>명사</button>
+            <button data-pos="verb" class="doodle-btn" disabled>동사</button>
+            <button data-pos="adj" class="doodle-btn" disabled>형용사</button>
         </div>
     </div>
+    
+    <div id="startOverlay" class="lobby-overlay">
+        <div class="lobby-container">
+            
+            <div id="tab-vocab" class="tab-content active">
+                <div class="header-section text-center">
+                    <span class="premium-badge">Vocabulary</span>
+                    <h1 class="brand-title">Trigger<br>Voca</h1>
+                    <p class="brand-subtitle">Super Fast English Grammar</p>
+                </div>
 
-    <div id="tab2" class="tab-content">
-        <div class="doodle-box">
-            <h3>된다니까 3시간 영문법</h3>
-            <p>문법의 뼈대를 3시간 만에 완성하는 비법 라운지</p>
-            <button class="doodle-btn primary-btn" onclick="window.open('https://www.notion.so/3-26ea81fd05e580869538e10685e3cdf2?openExternalBrowser=1')">VOD 라운지 입장</button>
-        </div>
-    </div>
+                <div class="doodle-box list-card">
+                    <h3>학습 커리큘럼</h3>
+                    <ul class="curriculum-list" id="dayList">
+                        </ul>
+                </div>
 
-    <div class="app" style="display:none;">
-        <div id="wordCard" class="card doodle-box" style="text-align:center;">
-            <div id="remaining" style="font-size:14px; color:#888;">0</div>
-            <div id="word" style="font-size:48px; font-weight:900; margin:20px 0;">READY</div>
-            <div id="timer" style="font-size:32px; font-weight:800; color:#FF6B3D;">10</div>
-            <div class="pos-buttons" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-top:20px;">
-                <button class="doodle-btn" data-pos="noun">명사</button>
-                <button class="doodle-btn" data-pos="verb">동사</button>
-                <button class="doodle-btn" data-pos="adj">형용사</button>
+                <div class="grid-2col">
+                    <div class="doodle-box mini-card text-center">
+                        <h3>내 단어장</h3>
+                        <p>120</p>
+                    </div>
+                    <div class="doodle-box mini-card text-center">
+                        <h3>오답 노트</h3>
+                        <p id="weakListCount">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-grammar" class="tab-content" style="display: none;">
+                <div class="header-section text-center">
+                    <span class="premium-badge">Grammar Class</span>
+                    <h1 class="brand-title">된다니까<br>3시간 영문법</h1>
+                </div>
+                <div class="doodle-box main-action-card text-center">
+                    <h3>비법 라운지 입장</h3>
+                    <p>문법의 뼈대를 3시간 만에 완성</p>
+                    <button onclick="window.open('대표님의_노션_주소_입력')" class="doodle-btn primary-btn">VOD 라운지 입장</button>
+                </div>
             </div>
         </div>
-    </div>
 
+        <div class="bottom-nav">
+            <div class="nav-item active" onclick="switchTab('tab-vocab', this)">📖 단어장 홈</div>
+            <div class="nav-item" onclick="switchTab('tab-grammar', this)">📺 영문법 강의</div>
+        </div>
+    </div>
+    
     <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.0/kakao.min.js"></script>
-    <script src="js/app.js"></script>
+    <script src="js/app.js?v=4"></script>
     <script>
-        function openTab(evt, tabName) {
-            var i, tabcontent, tablinks;
-            tabcontent = document.getElementsByClassName("tab-content");
-            for (i = 0; i < tabcontent.length; i++) tabcontent[i].style.display = "none";
-            tablinks = document.getElementsByClassName("tab-btn");
-            for (i = 0; i < tablinks.length; i++) tablinks[i].className = tablinks[i].className.replace(" active", "");
-            document.getElementById(tabName).style.display = "block";
-            evt.currentTarget.className += " active";
+        function switchTab(tabId, element) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.style.display = 'none');
+            document.getElementById(tabId).style.display = 'block';
+            document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+            element.classList.add('active');
         }
     </script>
 </body>
