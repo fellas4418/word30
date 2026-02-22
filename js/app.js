@@ -300,16 +300,10 @@ function showResults() {
                 {
                     title: '시크릿 노션 VOD 입장',
                     link: {
-                        mobileWebUrl: 'https://www.notion.so/3-26ea81fd05e580869538e10685e3cdf2', // 🚨 실제 노션 링크로 변경 필수
-                        webUrl: 'https://www.notion.so/3-26ea81fd05e580869538e10685e3cdf2',
-                    },
-                },
-                {
-                    title: '나도 TRIGGER 영단어 앱 써보기',
-                    link: {
-                        mobileWebUrl: 'https://word30.pages.dev',
-                        webUrl: 'https://word30.pages.dev',
-                    },
+                        // 카카오 설정에 https://www.notion.so 가 등록되어 있어야 작동함
+                        mobileWebUrl: 'https://www.notion.so/3-26ea81fd05e580869538e10685e3cdf2', 
+                        webUrl: 'https://www.notion.so/3-26ea81fd05e580869538e10685e3cdf2' 
+                    }
                 }
             ]
         });
