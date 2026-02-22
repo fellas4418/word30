@@ -1,37 +1,39 @@
 :root {
-  --bg-color: #F9F4E8;      /* 크라프트지 배경 */
+  --bg-color: #F4EFE6;      /* 따뜻한 크라프트지 색상 */
   --text-dark: #2C3639;     /* 칠판 차콜 */
-  --looke-orange: #FF6B4A;  /* 루크 오렌지 */
-  --box-shadow: 4px 4px 0px #2C3639; /* 두들 하드 섀도우 */
+  --looke-orange: #FF6B4A;  /* 루크 브랜드 오렌지 */
+  --box-shadow: 4px 4px 0px #2C3639;
 }
 
 body {
-  margin: 0; background-color: var(--bg-color);
-  color: var(--text-dark); font-family: 'Pretendard', sans-serif;
-  display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden;
+  margin: 0; padding: 0; background-color: var(--bg-color);
+  font-family: 'Pretendard', sans-serif; color: var(--text-dark);
+  display: flex; justify-content: center; align-items: center; height: 100vh;
 }
 
+/* 아날로그 두들 박스 */
 .doodle-box {
   background: #FFF; border: 3px solid var(--text-dark);
   border-radius: 16px; box-shadow: var(--box-shadow);
   padding: 24px; margin-bottom: 20px;
 }
 
+/* 버튼 디자인 */
 .doodle-btn {
   background: #FFF; border: 3px solid var(--text-dark);
   border-radius: 12px; padding: 16px; font-weight: 800;
   box-shadow: var(--box-shadow); cursor: pointer; transition: 0.1s;
 }
-
 .doodle-btn:active { transform: translate(3px, 3px); box-shadow: none; }
-
 .primary-btn { background: var(--looke-orange); color: #FFF; width: 100%; }
 
-.lobby-overlay { position: fixed; inset: 0; background: var(--bg-color); z-index: 1000; overflow-y: auto; display: flex; justify-content: center; }
+/* 로비 레이아웃 */
+.lobby-overlay { position: fixed; inset: 0; background: var(--bg-color); z-index: 1000; display: flex; justify-content: center; overflow-y: auto; }
 .lobby-container { width: 90%; max-width: 400px; padding: 40px 0; }
 
-.nav-item.active { color: var(--looke-orange); border-bottom: 3px solid var(--looke-orange); }
+.header-section h1 { font-size: 42px; line-height: 1.1; margin-bottom: 5px; }
+.brand-subtitle { color: var(--looke-orange); font-weight: bold; margin-bottom: 30px; }
 
-/* 퀴즈 카드 스타일 */
+/* 퀴즈 UI */
 .word { font-size: 48px; font-weight: 900; margin-bottom: 10px; }
 .timer { font-size: 28px; color: var(--looke-orange); font-weight: 800; }

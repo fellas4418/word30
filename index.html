@@ -5,11 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trigger Voca</title>
     <link rel="stylesheet" href="css/style.css">
+    <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.0/kakao.min.js"></script>
 </head>
 <body>
     <div class="app" style="display:none; width: 90%; max-width: 400px; text-align: center;">
-        <div class="doodle-box" id="wordCard">
-            <div id="word" class="word">준비...</div>
+        <div class="doodle-box">
+            <div id="word" class="word">Ready...</div>
             <div id="timer" class="timer">10</div>
         </div>
         <div class="pos-buttons" style="display:flex; gap:10px;">
@@ -21,21 +22,28 @@
 
     <div id="startOverlay" class="lobby-overlay">
         <div class="lobby-container">
-            <div class="header-section text-center" style="text-align:center; margin-bottom:30px;">
-                <h1 style="font-size:42px; margin:0;">Trigger<br>Voca</h1>
-                <p style="color:var(--looke-orange); font-weight:bold;">Super Fast English</p>
+            <div class="header-section text-center" style="text-align:center;">
+                <h1>Trigger<br>Voca</h1>
+                <p class="brand-subtitle">Super Fast English</p>
             </div>
+            
             <div class="doodle-box">
                 <h3 style="margin-top:0;">학습 커리큘럼</h3>
-                <ul id="dayList" style="list-style:none; padding:0;"></ul>
+                <ul id="dayList" style="list-style:none; padding:0; margin:0;">
+                    <li style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid #eee;">
+                        <span>Day 1. 필수 기본 단어</span>
+                        <button class="doodle-btn" style="padding:5px 15px;" onclick="startStudy('day1')">시작</button>
+                    </li>
+                </ul>
             </div>
+
             <div class="doodle-box text-center" style="text-align:center;">
-                <h4 style="margin:0; color:var(--looke-orange);">루크 쌤의 비밀 라운지</h4>
-                <button onclick="window.open('YOUR_NOTION_LINK')" class="doodle-btn primary-btn" style="margin-top:10px;">노션 VOD 입장</button>
+                <h4 style="margin:0; color:var(--looke-orange);">루크 쌤의 시크릿 라운지</h4>
+                <button onclick="window.open('https://대표님의_노션_링크')" class="doodle-btn primary-btn" style="margin-top:10px;">노션 VOD 입장</button>
             </div>
         </div>
     </div>
-    <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.0/kakao.min.js"></script>
+
     <script src="js/app.js"></script>
 </body>
 </html>
