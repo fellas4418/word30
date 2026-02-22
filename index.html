@@ -12,12 +12,10 @@
         <div class="progress">
             <span class="doodle-badge">남은 문제: <span id="remaining">30</span></span>
         </div>
-    
         <div class="card doodle-box" id="wordCard">
             <div id="word" class="word">준비 중...</div>
             <div id="timer" class="timer">10</div>
         </div>
-    
         <div class="pos-buttons">
             <button data-pos="noun" class="doodle-btn" disabled>명사</button>
             <button data-pos="verb" class="doodle-btn" disabled>동사</button>
@@ -27,50 +25,70 @@
     
     <div id="startOverlay" class="lobby-overlay">
         <div class="lobby-container">
-            <div class="header-section text-center">
-                <span class="premium-badge">Premium Class</span>
-                <h1 class="brand-title">된다니까<br>Word30</h1>
-                <p class="brand-subtitle">Super Fast English Grammar</p>
-            </div>
-
-            <div class="doodle-box main-action-card text-center">
-                <img src="https://cdn-icons-png.flaticon.com/512/2941/2941566.png" alt="book" class="deco-icon">
-                <h2>오늘의 학습</h2>
-                <p>목표 단어: <strong>30개</strong></p>
-                <button id="startBtn" class="doodle-btn primary-btn">학습 시작하기</button>
-            </div>
-
-            <div class="grid-2col">
-                <div class="doodle-box mini-card text-center">
-                    <h3>내 단어장</h3>
-                    <p>120 단어</p>
+            
+            <div id="tab-vocab" class="tab-content active">
+                <div class="header-section text-center">
+                    <span class="premium-badge">Vocabulary</span>
+                    <h1 class="brand-title">된다니까<br>Word30</h1>
                 </div>
-                <div class="doodle-box mini-card text-center">
-                    <h3>오답 노트</h3>
-                    <p id="weakListCount">15 단어</p>
+
+                <div class="doodle-box main-action-card text-center">
+                    <img src="https://cdn-icons-png.flaticon.com/512/2941/2941566.png" alt="book" class="deco-icon">
+                    <h2>오늘의 학습</h2>
+                    <p>Day 1. 기초 영단어 (30개)</p>
+                    <button id="startBtn" class="doodle-btn primary-btn">단어 학습 시작</button>
+                </div>
+
+                <div class="grid-2col">
+                    <div class="doodle-box mini-card text-center">
+                        <h3>내 단어장</h3>
+                        <p>120 단어</p>
+                    </div>
+                    <div class="doodle-box mini-card text-center">
+                        <h3>오답 노트</h3>
+                        <p id="weakListCount">15 단어</p>
+                    </div>
                 </div>
             </div>
 
-            <div class="doodle-box list-card">
-                <h3>커리큘럼 <span style="font-size: 12px; color: #888;">(준비중)</span></h3>
-                <ul class="curriculum-list">
-                    <li>
-                        <span>Day 1. 문장의 뼈대 동사</span>
-                        <button class="status-badge complete">완료</button>
-                    </li>
-                    <li>
-                        <span>Day 2. 살을 붙이는 수식어</span>
-                        <button class="status-badge complete">완료</button>
-                    </li>
-                    <li>
-                        <span>Day 3. 시제와 조동사</span>
-                        <button class="status-badge waiting">대기</button>
-                    </li>
-                </ul>
+            <div id="tab-grammar" class="tab-content" style="display: none;">
+                <div class="header-section text-center">
+                    <span class="premium-badge">Grammar Class</span>
+                    <h1 class="brand-title">된다니까<br>3시간 영문법</h1>
+                </div>
+                
+                <div class="doodle-box list-card">
+                    <h3>강의 커리큘럼 <span style="font-size: 12px; color: #888;">(인프런/클래스101)</span></h3>
+                    <ul class="curriculum-list">
+                        <li><span>Sec 1. 3시간 핵심 총정리</span></li>
+                        <li><span>Sec 2. 문장 성분의 이해</span></li>
+                        <li><span>Sec 3. 분사구문 압축</span></li>
+                        <li><span>Sec 4. 시제와 완료 시제</span></li>
+                    </ul>
+                </div>
             </div>
+
+        </div>
+
+        <div class="bottom-nav">
+            <div class="nav-item active" onclick="switchTab('tab-vocab', this)">📖 단어장</div>
+            <div class="nav-item" onclick="switchTab('tab-grammar', this)">📺 영문법 강의</div>
         </div>
     </div>
     
     <script src="js/app.js?v=3"></script>
+    
+    <script>
+        function switchTab(tabId, element) {
+            // 모든 탭 숨기기
+            document.querySelectorAll('.tab-content').forEach(tab => tab.style.display = 'none');
+            // 선택한 탭 보이기
+            document.getElementById(tabId).style.display = 'block';
+            
+            // 탭 버튼 색상 변경
+            document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+            element.classList.add('active');
+        }
+    </script>
 </body>
 </html>

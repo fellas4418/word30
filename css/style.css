@@ -209,3 +209,41 @@ body {
 }
 .status-badge.complete { background-color: var(--text-dark); color: #FFF; }
 .status-badge.waiting { color: #888; border-color: #888; }
+
+/* ---------- 5. 하단 네비게이션 탭 (추가됨) ---------- */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background-color: #FFFFFF;
+  display: flex;
+  border-top: 3px solid var(--text-dark);
+  z-index: 1001;
+}
+
+.nav-item {
+  flex: 1;
+  text-align: center;
+  padding: 16px 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: #a0a0a0;
+  cursor: pointer;
+  border-right: 3px solid var(--text-dark);
+  transition: all 0.2s;
+}
+
+.nav-item:last-child {
+  border-right: none;
+}
+
+.nav-item.active {
+  color: var(--looke-orange);
+  background-color: var(--bg-color);
+}
+
+/* 탭 바에 가리지 않게 컨테이너 하단 여백 추가 */
+.lobby-container {
+  padding-bottom: 80px; 
+}
