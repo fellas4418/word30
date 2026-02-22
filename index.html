@@ -3,36 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Word30 - 영어 단어 학습</title>
+    <title>된다니까 Word30 - 영문법 단어장</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
     <div class="app">
         <div class="progress">
-            남은 문제: <span id="remaining">30</span>
+            <span class="doodle-badge">남은 문제: <span id="remaining">30</span></span>
         </div>
     
-        <div class="card" id="wordCard">
+        <div class="card doodle-box" id="wordCard">
             <div id="word" class="word">준비 중...</div>
             <div id="timer" class="timer">10</div>
         </div>
     
         <div class="pos-buttons">
-            <button data-pos="noun" disabled>명사</button>
-            <button data-pos="verb" disabled>동사</button>
-            <button data-pos="adj" disabled>형용사</button>
+            <button data-pos="noun" class="doodle-btn" disabled>명사</button>
+            <button data-pos="verb" class="doodle-btn" disabled>동사</button>
+            <button data-pos="adj" class="doodle-btn" disabled>형용사</button>
         </div>
     </div>
     
-    <div id="startOverlay" class="overlay">
-        <div class="overlay-content">
-            <h1 style="font-size: 48px; margin-bottom: 10px;">word30</h1>
-            <p style="margin-bottom: 30px; opacity: 0.8;">단어를 읽어야 버튼이 활성화됩니다.</p>
-            <button id="startBtn">문제 시작</button>
+    <div id="startOverlay" class="lobby-overlay">
+        <div class="lobby-container">
+            <div class="header-section text-center">
+                <span class="premium-badge">Premium Class</span>
+                <h1 class="brand-title">된다니까<br>Word30</h1>
+                <p class="brand-subtitle">Super Fast English Grammar</p>
+            </div>
+
+            <div class="doodle-box main-action-card text-center">
+                <img src="https://cdn-icons-png.flaticon.com/512/2941/2941566.png" alt="book" class="deco-icon">
+                <h2>오늘의 학습</h2>
+                <p>목표 단어: <strong>30개</strong></p>
+                <button id="startBtn" class="doodle-btn primary-btn">학습 시작하기</button>
+            </div>
+
+            <div class="grid-2col">
+                <div class="doodle-box mini-card text-center">
+                    <h3>내 단어장</h3>
+                    <p>120 단어</p>
+                </div>
+                <div class="doodle-box mini-card text-center">
+                    <h3>오답 노트</h3>
+                    <p id="weakListCount">15 단어</p>
+                </div>
+            </div>
+
+            <div class="doodle-box list-card">
+                <h3>커리큘럼 <span style="font-size: 12px; color: #888;">(준비중)</span></h3>
+                <ul class="curriculum-list">
+                    <li>
+                        <span>Day 1. 문장의 뼈대 동사</span>
+                        <button class="status-badge complete">완료</button>
+                    </li>
+                    <li>
+                        <span>Day 2. 살을 붙이는 수식어</span>
+                        <button class="status-badge complete">완료</button>
+                    </li>
+                    <li>
+                        <span>Day 3. 시제와 조동사</span>
+                        <button class="status-badge waiting">대기</button>
+                    </li>
+                </ul>
+            </div>
         </div>
     </div>
     
-    <script src="js/app.js?v=2"></script>
+    <script src="js/app.js?v=3"></script>
 </body>
 </html>
