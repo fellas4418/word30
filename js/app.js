@@ -3,7 +3,7 @@ if (typeof Kakao !== 'undefined' && !Kakao.isInitialized()) {
     Kakao.init('fbb1520306ffaad0a882e993109a801c'); 
 }
 
-/* ---------- 1. 데이터 설정 (Day 1: 33개 풀세트) ---------- */
+/* ---------- 1. 데이터 설정 (Day 1: 33개) ---------- */
 const wordData = {
     "day1": [
         { word: "abandon", pos: "verb", meaning: "포기하다" },
@@ -40,12 +40,7 @@ const wordData = {
         { word: "eager", pos: "adj", meaning: "열망하는" },
         { word: "facility", pos: "noun", meaning: "시설" }
     ],
-    "day2": [
-        { word: "generate", pos: "verb", meaning: "발생시키다" },
-        { word: "hazard", pos: "noun", meaning: "위험" },
-        { word: "immediate", pos: "adj", meaning: "즉각적인" }
-        // Day 2도 필요하실 때 33개를 채우시면 됩니다.
-    ]
+    "day2": []
 };
 
 /* ---------- 2. 상태 관리 ---------- */
@@ -65,9 +60,14 @@ const buttons = document.querySelectorAll(".pos-buttons button");
 const startOverlay = document.getElementById("startOverlay");
 const cardEl = document.getElementById("wordCard");
 
-const feedbackEl = document.createElement("div");
-feedbackEl.style.cssText = "font-size:16px; margin-top:15px; font-weight:bold; color:#888; text-align:center;";
-if(cardEl) cardEl.insertBefore(feedbackEl, timerEl);
+// 피드백 요소가 없을 경우에만 생성
+let feedbackEl = document.getElementById("speechFeedback");
+if (!feedbackEl && cardEl) {
+    feedbackEl = document.createElement("div");
+    feedbackEl.id = "speechFeedback";
+    feedbackEl.style.cssText = "font-size:16px; margin-top:15px; font-weight:bold; color:#888; text-align:center;";
+    cardEl.insertBefore(feedbackEl, timerEl);
+}
 
 /* ---------- 4. 음성 인식 설정 ---------- */
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -79,25 +79,22 @@ recognition.lang = "ko-KR";
 recognition.onresult = (event) => {
     let transcript = Array.from(event.results).map(res => res[0].transcript).join("").replace(/\s+/g, "");
     const target = currentSessionWords[currentIndex].meaning.replace(/\s+/g, "");
-    
     feedbackEl.textContent = "인식 중: " + transcript;
-    
     if (transcript.includes(target) && !hasSpoken) {
         hasSpoken = true;
         feedbackEl.textContent = "✨ 정답: " + currentSessionWords[currentIndex].meaning;
         feedbackEl.style.color = "#2ecc71";
         buttons.forEach(btn => btn.disabled = false);
-        timerEl.style.color = "#2ecc71";
     }
 };
 
-/* ---------- 5. 실행 로직 ---------- */
-function startDay(dayKey) {
+/* ---------- 5. 실행 및 제어 함수 (전역 공개) ---------- */
+window.startDay = function(dayKey) {
     currentSessionWords = wordData[dayKey] || [];
     currentDayTitle = dayKey.toUpperCase();
     
     if (currentSessionWords.length === 0) {
-        alert("준비 중인 학습입니다.");
+        alert("데이터를 준비 중입니다.");
         return;
     }
 
@@ -109,31 +106,25 @@ function startDay(dayKey) {
     loadWord();
     startTimer();
     try { recognition.start(); } catch(e) {}
-}
+};
 
 function loadWord() {
     const current = currentSessionWords[currentIndex];
     wordEl.textContent = current.word;
-    wordEl.style.color = "#1F3B34";
     remainingEl.textContent = currentSessionWords.length - currentIndex;
-    feedbackEl.textContent = "뜻을 소리내어 말해주세요";
+    feedbackEl.textContent = "뜻을 말해주세요";
     feedbackEl.style.color = "#888";
-    buttons.forEach(btn => {
-        btn.disabled = true;
-        btn.style.backgroundColor = "#FF6B3D";
-    });
+    buttons.forEach(btn => btn.disabled = true);
     hasSpoken = false;
 }
 
 function startTimer() {
     time = 10;
     timerEl.textContent = time;
-    timerEl.style.color = "#FF6B3D";
     clearInterval(interval);
     interval = setInterval(() => {
         time--;
         timerEl.textContent = time;
-        if (time <= 3) timerEl.style.color = "red";
         if (time <= 0) {
             clearInterval(interval);
             sessionResults.push({...currentSessionWords[currentIndex], status: "시간초과"});
@@ -155,34 +146,27 @@ function nextWord() {
 function showResults() {
     try { recognition.stop(); } catch(e) {}
     document.querySelector('.app').style.display = 'none';
-
     const correct = sessionResults.filter(r => r.status === "정답").length;
     const total = sessionResults.length;
     const acc = Math.round((correct / total) * 100) || 0;
 
     let resHTML = `<div class="card doodle-box" style="text-align:center; padding: 40px 20px;">
-        <h2 class="brand-title" style="font-size:24px;">${currentDayTitle} 오단완!</h2>
-        <p style="font-size:22px; font-weight:800; color:#FF6B4A; margin: 20px 0;">정답률: ${acc}% (${correct}/${total})</p>
-        <button onclick="location.reload()" class="doodle-btn primary-btn" style="margin-bottom:12px; width:100%;">다른 Day 공부하기</button>
-        <button id="kakaoBtn" class="doodle-btn" style="background:#FEE500; width:100%; color:#3C1E1E; font-weight:800;">💬 오단완 리포트 전송</button>
+        <h2 class="brand-title">${currentDayTitle} 완료!</h2>
+        <p style="font-size:22px; font-weight:800; color:#FF6B4A;">정답률: ${acc}%</p>
+        <button onclick="location.reload()" class="doodle-btn primary-btn" style="width:100%; margin-bottom:10px;">메인으로</button>
+        <button id="kakaoBtn" class="doodle-btn" style="background:#FEE500; width:100%; color:#3C1E1E;">💬 오단완 리포트 전송</button>
     </div>`;
-
     document.body.innerHTML += resHTML;
 
     document.getElementById('kakaoBtn').onclick = () => {
         Kakao.Share.sendDefault({
             objectType: 'text',
-            text: `📊 [Trigger Voca 리포트]\n루크 학생이 오늘의 단어 학습을 완료했습니다!\n\n📅 학습 범위: ${currentDayTitle}\n✅ 정답률: ${acc}%\n\n----------------------\n🔒 [루크 쌤의 시크릿 라운지]\n영단어를 문장으로 바꾸는 힘!\n👉 아래 버튼을 눌러 입장하세요.`,
+            text: `📊 [Trigger Voca 리포트]\n${currentDayTitle} 오단완 완료!\n✅ 정답률: ${acc}%`,
             link: { mobileWebUrl: 'https://word30.pages.dev' },
-            buttons: [
-                {
-                    title: '시크릿 노션 VOD 입장',
-                    link: { 
-                        mobileWebUrl: 'https://www.notion.so/3-26ea81fd05e580869538e10685e3cdf2?openExternalBrowser=1',
-                        webUrl: 'https://www.notion.so/3-26ea81fd05e580869538e10685e3cdf2'
-                    }
-                }
-            ]
+            buttons: [{
+                title: '시크릿 노션 입장',
+                link: { mobileWebUrl: 'https://www.notion.so/3-26ea81fd05e580869538e10685e3cdf2?openExternalBrowser=1' }
+            }]
         });
     };
 }
@@ -190,15 +174,8 @@ function showResults() {
 buttons.forEach(btn => {
     btn.onclick = () => {
         if (!hasSpoken) return;
-        clearInterval(interval);
         const isCorrect = btn.dataset.pos === currentSessionWords[currentIndex].pos;
-        btn.style.backgroundColor = isCorrect ? "#2ecc71" : "#e74c3c";
-        
-        sessionResults.push({
-            ...currentSessionWords[currentIndex], 
-            status: isCorrect ? "정답" : "품사오답"
-        });
-
-        setTimeout(() => nextWord(), 800);
+        sessionResults.push({...currentSessionWords[currentIndex], status: isCorrect ? "정답" : "오답"});
+        nextWord();
     };
 });
