@@ -2,7 +2,7 @@
 // 🚨 현실적인 주의사항: 아래 'YOUR_KAKAO_JAVASCRIPT_KEY' 부분에 
 // 실제 카카오 디벨로퍼스에서 발급받은 키를 넣기 전까지는 카톡 공유 버튼을 눌러도 작동하지 않습니다.
 if (typeof Kakao !== 'undefined' && !Kakao.isInitialized()) {
-    Kakao.init('20d31cb149e892d8b1bdd0a8e7306749'); 
+    Kakao.init('fbb1520306ffaad0a882e993109a801c'); 
 }
 
 /* ---------- 1. 데이터 설정 ---------- */
