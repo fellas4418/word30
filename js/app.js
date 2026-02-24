@@ -1,12 +1,10 @@
 /* ---------- 카카오톡 SDK 초기화 ---------- */
-// 🚨 현실적인 주의사항: 아래 'YOUR_KAKAO_JAVASCRIPT_KEY' 부분에 
-// 실제 카카오 디벨로퍼스에서 발급받은 키를 넣기 전까지는 카톡 공유 버튼을 눌러도 작동하지 않습니다.
 if (typeof Kakao !== 'undefined' && !Kakao.isInitialized()) {
     Kakao.init('fbb1520306ffaad0a882e993109a801c'); 
 }
 
 /* ---------- 1. 데이터 설정 ---------- */
-const IS_TEST_MODE = true; 
+const IS_TEST_MODE = false; // 🚨 테스트 끄고 실전 모드로 변경
 
 const wordData = {
     day1: [
@@ -66,7 +64,6 @@ const startBtn = document.getElementById("startBtn");
 const overlay = document.getElementById("startOverlay");
 const cardEl = document.getElementById("wordCard");
 
-// 내 발음 피드백 텍스트
 const feedbackEl = document.createElement("div");
 feedbackEl.style.fontSize = "16px";
 feedbackEl.style.marginTop = "15px";
@@ -89,8 +86,6 @@ if (SpeechRecognition) {
 
     recognition.onend = () => {
         if(cardEl && !hasSpoken) cardEl.style.borderColor = "transparent";
-        
-        // 안드로이드 3초 침묵 시 마이크 꺼짐 완벽 방어
         if (!hasSpoken && time > 0) {
             try { recognition.start(); } catch(e) {}
         }
@@ -102,7 +97,6 @@ if (SpeechRecognition) {
             fullTranscript += event.results[i][0].transcript;
         }
         
-        // 띄어쓰기 차이로 인한 오답 방지
         const transcript = fullTranscript.replace(/\s+/g, ""); 
         const currentMeaning = currentSessionWords[currentIndex].meaning.replace(/\s+/g, "");
         
@@ -133,28 +127,7 @@ if (SpeechRecognition) {
 
 /* ---------- 5. 핵심 로직 ---------- */
 function getTargetWords() {
-    let history = JSON.parse(localStorage.getItem('word30_history') || '{"wrongs":[]}');
-    
-    let uniqueWrongs = [];
-    let seen = new Set();
-    for (let w of (history.wrongs || [])) {
-        if (!seen.has(w.word)) {
-            seen.add(w.word);
-            uniqueWrongs.push(w);
-        }
-    }
-    history.wrongs = uniqueWrongs;
-    localStorage.setItem('word30_history', JSON.stringify(history));
-
-    let reviewList = history.wrongs;
-
-    if (reviewList.length > 0) {
-        isReviewMode = true;
-        return reviewList.slice(0, 10); 
-    } else {
-        isReviewMode = false;
-        return words;
-    }
+    return words;
 }
 
 function loadWord() {
@@ -212,7 +185,6 @@ function nextWord() {
     
     loadWord();
     
-    // 삼성폰 마이크 얼어붙음 방지 로직
     if (recognition) {
         try { recognition.stop(); } catch(e) {}
         setTimeout(() => { 
@@ -235,7 +207,6 @@ function saveResult(wordObj, status) {
     localStorage.setItem('word30_history', JSON.stringify(history));
 }
 
-// 🚨 [변경됨] 결과 화면 출력 로직 (정답률 계산 및 카카오 공유 버튼 추가)
 function showResults() {
     updateLobbyStats();
     if (recognition) {
@@ -244,15 +215,13 @@ function showResults() {
     
     document.querySelector('.app').style.display = 'none'; 
 
-    // 정답률 계산
     const totalWords = sessionResults.length;
     const correctWords = sessionResults.filter(res => res.status === "정답").length;
     const accuracy = totalWords > 0 ? Math.round((correctWords / totalWords) * 100) : 0;
 
-    let resultHTML = `<div class="card" style="padding: 30px 20px; text-align: left; overflow-y: auto; max-height: 80vh;">`;
+    let resultHTML = `<div class="card doodle-box" style="padding: 30px 20px; text-align: left; overflow-y: auto; max-height: 80vh;">`;
     resultHTML += `<h2 style="margin-top:0; color:#1F3B34; text-align:center;">학습 결과</h2>`;
     
-    // 점수 요약
     resultHTML += `<div style="text-align:center; margin-bottom: 20px; font-size: 18px; font-weight: 800; color: #FF6B3D;">
         정답률: ${correctWords}/${totalWords} (${accuracy}%)
     </div>`;
@@ -272,13 +241,8 @@ function showResults() {
     });
 
     resultHTML += `</ul>`;
-    
-    // 다시 시작 버튼
-    resultHTML += `<button id="restartBtn" style="width:100%; padding: 16px; border-radius: 14px; border:none; background-color:#FF6B3D; color:white; font-size:18px; font-weight:700; cursor:pointer; margin-top: 20px; box-shadow: 4px 4px 0px #2C3639;">다시 시작하기</button>`;
-    
-    // 카카오톡 공유 버튼
+    resultHTML += `<button id="restartBtn" style="width:100%; padding: 16px; border-radius: 14px; border:none; background-color:#FF6B3D; color:white; font-size:18px; font-weight:700; cursor:pointer; margin-top: 20px; box-shadow: 4px 4px 0px #2C3639;">처음으로</button>`;
     resultHTML += `<button id="kakaoShareBtn" style="width:100%; padding: 16px; border-radius: 14px; border:none; background-color:#FEE500; color:#3C1E1E; font-size:18px; font-weight:800; cursor:pointer; margin-top: 15px; box-shadow: 4px 4px 0px #2C3639;">💬 오단완 리포트 카톡 전송</button>`;
-    
     resultHTML += `</div>`;
 
     let resultContainer = document.createElement('div');
@@ -286,12 +250,11 @@ function showResults() {
     resultContainer.innerHTML = resultHTML;
     document.body.appendChild(resultContainer);
 
-    // 이벤트 리스너
     document.getElementById('restartBtn').onclick = () => location.reload();
     
     document.getElementById('kakaoShareBtn').onclick = () => {
-        if (!Kakao.isInitialized()) {
-            alert("카카오 공유 기능이 설정되지 않았습니다. 개발자 키를 확인해주세요.");
+        if (typeof Kakao === 'undefined' || !Kakao.isInitialized()) {
+            alert("카카오 공유 기능이 로드되지 않았습니다. 인터넷을 확인해주세요.");
             return;
         }
 
@@ -306,7 +269,7 @@ function showResults() {
                 {
                     title: '시크릿 노션 VOD 입장',
                     link: {
-                        mobileWebUrl: 'https://www.notion.so/3-26ea81fd05e580869538e10685e3cdf2', // 🚨 실제 노션 링크로 변경 필수
+                        mobileWebUrl: 'https://www.notion.so/3-26ea81fd05e580869538e10685e3cdf2',
                         webUrl: 'https://www.notion.so/3-26ea81fd05e580869538e10685e3cdf2',
                     },
                 },
@@ -322,7 +285,7 @@ function showResults() {
     };
 }
 
-/* ---------- 6. 버튼 이벤트 ---------- */
+/* ---------- 6. 버튼 이벤트 & 복습 로직 ---------- */
 buttons.forEach(btn => {
     btn.onclick = () => {
         if (!hasSpoken || btn.disabled) return;
@@ -365,11 +328,39 @@ function startSession(dayKey) {
         currentSessionWords = IS_TEST_MODE ? wordData[dayKey].slice(0, 2) : wordData[dayKey];
         isReviewMode = false;
     } else {
-        currentSessionWords = getTargetWords();
+        currentSessionWords = IS_TEST_MODE ? getTargetWords().slice(0, 2) : getTargetWords();
+        isReviewMode = false;
     }
 
-    loadWord();
+    currentIndex = 0;
+    sessionResults = [];
+    hasSpoken = false;
 
+    loadWord();
+    if (recognition) {
+        try { recognition.start(); } catch(err) {}
+    }
+    startTimer();
+}
+
+// 🚨 오답 노트 클릭 시 복습 시작하는 함수 추가
+function startReview() {
+    let history = JSON.parse(localStorage.getItem('word30_history') || '{"wrongs":[]}');
+    if (!history.wrongs || history.wrongs.length === 0) {
+        alert("오답 노트가 텅 비어 있습니다! 학습을 먼저 진행해주세요.");
+        return;
+    }
+    
+    isReviewMode = true;
+    currentSessionWords = history.wrongs.slice(0, 10); // 최대 10개만 복습
+    currentIndex = 0;
+    sessionResults = [];
+    hasSpoken = false;
+
+    document.getElementById('startOverlay').style.display = "none";
+    document.querySelector('.app').style.display = "block";
+
+    loadWord();
     if (recognition) {
         try { recognition.start(); } catch(err) {}
     }

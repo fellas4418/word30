@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>된다니까 Word30 - 영문법 단어장</title>
+    <title>Trigger Voca - 영문법 단어장</title>
     <link rel="stylesheet" href="css/style.css">
+    <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.0/kakao.min.js"></script>
 </head>
 <body>
 
-    <div class="app">
+    <div class="app" style="display: none;">
         <div class="progress">
             <span class="doodle-badge">남은 문제: <span id="remaining">30</span></span>
         </div>
@@ -28,7 +29,6 @@
     <div id="startOverlay" class="lobby-overlay">
         <div class="lobby-container">
             <div class="header-section text-center">
-                <span class="premium-badge">Trigger Voca</span>
                 <h1 class="brand-title">Trigger<br>Voca</h1>
             </div>
 
@@ -44,15 +44,16 @@
                     <h3>내 단어장</h3>
                     <p>120 단어</p>
                 </div>
-                <div class="doodle-box mini-card text-center">
+                <div class="doodle-box mini-card text-center" onclick="startReview()" style="cursor: pointer;">
                     <h3>오답 노트</h3>
-                    <p id="weakListCount">15 단어</p>
+                    <p id="weakListCount">0 단어</p>
                 </div>
             </div>
 
-            <button onclick="document.getElementById('curriculumSection').style.display='block'; this.style.display='none';" class="doodle-btn" style="width: 100%; margin-bottom: 20px;">📅 전체 커리큘럼 보기</button>
+            <button onclick="document.getElementById('curriculumSection').style.display='block'; this.style.display='none';" class="doodle-btn" style="width: 100%; margin-bottom: 20px;">📺 3시간 영문법 보기</button>
+            
             <div id="curriculumSection" class="doodle-box list-card" style="display: none;">
-                <h3>커리큘럼 <span style="font-size: 12px; color: #888;">(준비중)</span></h3>
+                <h3>커리큘럼</h3>
                 <ul class="curriculum-list">
                     <li>
                         <span>Day 1. 문장의 뼈대 동사</span>
@@ -71,6 +72,6 @@
         </div>
     </div>
     
-    <script src="js/app.js?v=3"></script>
+    <script src="js/app.js?v=4"></script>
 </body>
 </html>
