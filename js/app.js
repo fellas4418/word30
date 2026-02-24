@@ -2,45 +2,50 @@
 // 🚨 현실적인 주의사항: 아래 'YOUR_KAKAO_JAVASCRIPT_KEY' 부분에 
 // 실제 카카오 디벨로퍼스에서 발급받은 키를 넣기 전까지는 카톡 공유 버튼을 눌러도 작동하지 않습니다.
 if (typeof Kakao !== 'undefined' && !Kakao.isInitialized()) {
-    Kakao.init('YOUR_KAKAO_JAVASCRIPT_KEY'); 
+    Kakao.init('fbb1520306ffaad0a882e993109a801c'); 
 }
 
 /* ---------- 1. 데이터 설정 ---------- */
 const IS_TEST_MODE = true; 
 
-const allWords = [
-    { word: "abandon", pos: "verb", meaning: "포기하다" },
-    { word: "ability", pos: "noun", meaning: "능력" },
-    { word: "active", pos: "adj", meaning: "활동적인" },
-    { word: "benefit", pos: "noun", meaning: "이익" },
-    { word: "collect", pos: "verb", meaning: "수집하다" },
-    { word: "decline", pos: "verb", meaning: "거절하다" },
-    { word: "efficient", pos: "adj", meaning: "효율적인" },
-    { word: "factor", pos: "noun", meaning: "요인" },
-    { word: "gather", pos: "verb", meaning: "모으다" },
-    { word: "habit", pos: "noun", meaning: "습관" },
-    { word: "ignore", pos: "verb", meaning: "무시하다" },
-    { word: "joint", pos: "adj", meaning: "공동의" },
-    { word: "knowledge", pos: "noun", meaning: "지식" },
-    { word: "labor", pos: "noun", meaning: "노동" },
-    { word: "maintain", pos: "verb", meaning: "유지하다" },
-    { word: "notice", pos: "verb", meaning: "알아차리다" },
-    { word: "object", pos: "noun", meaning: "물체" },
-    { word: "patient", pos: "adj", meaning: "인내심 있는" },
-    { word: "quality", pos: "noun", meaning: "품질" },
-    { word: "rare", pos: "adj", meaning: "드문" },
-    { word: "seek", pos: "verb", meaning: "찾다" },
-    { word: "target", pos: "noun", meaning: "목표" },
-    { word: "urban", pos: "adj", meaning: "도시의" },
-    { word: "value", pos: "noun", meaning: "가치" },
-    { word: "waste", pos: "verb", meaning: "낭비하다" },
-    { word: "yield", pos: "verb", meaning: "생산하다" },
-    { word: "zeal", pos: "noun", meaning: "열정" },
-    { word: "accurate", pos: "adj", meaning: "정확한" },
-    { word: "believe", pos: "verb", meaning: "믿다" },
-    { word: "capacity", pos: "noun", meaning: "용량" }
-];
+const wordData = {
+    day1: [
+        { word: "abandon", pos: "verb", meaning: "포기하다" },
+        { word: "ability", pos: "noun", meaning: "능력" },
+        { word: "active", pos: "adj", meaning: "활동적인" },
+        { word: "benefit", pos: "noun", meaning: "이익" },
+        { word: "collect", pos: "verb", meaning: "수집하다" },
+        { word: "decline", pos: "verb", meaning: "거절하다" },
+        { word: "efficient", pos: "adj", meaning: "효율적인" },
+        { word: "factor", pos: "noun", meaning: "요인" },
+        { word: "gather", pos: "verb", meaning: "모으다" },
+        { word: "habit", pos: "noun", meaning: "습관" },
+        { word: "ignore", pos: "verb", meaning: "무시하다" },
+        { word: "joint", pos: "adj", meaning: "공동의" },
+        { word: "knowledge", pos: "noun", meaning: "지식" },
+        { word: "labor", pos: "noun", meaning: "노동" },
+        { word: "maintain", pos: "verb", meaning: "유지하다" }
+    ],
+    day2: [
+        { word: "notice", pos: "verb", meaning: "알아차리다" },
+        { word: "object", pos: "noun", meaning: "물체" },
+        { word: "patient", pos: "adj", meaning: "인내심 있는" },
+        { word: "quality", pos: "noun", meaning: "품질" },
+        { word: "rare", pos: "adj", meaning: "드문" },
+        { word: "seek", pos: "verb", meaning: "찾다" },
+        { word: "target", pos: "noun", meaning: "목표" },
+        { word: "urban", pos: "adj", meaning: "도시의" },
+        { word: "value", pos: "noun", meaning: "가치" },
+        { word: "waste", pos: "verb", meaning: "낭비하다" },
+        { word: "yield", pos: "verb", meaning: "생산하다" },
+        { word: "zeal", pos: "noun", meaning: "열정" },
+        { word: "accurate", pos: "adj", meaning: "정확한" },
+        { word: "believe", pos: "verb", meaning: "믿다" },
+        { word: "capacity", pos: "noun", meaning: "용량" }
+    ]
+};
 
+const allWords = [...wordData.day1, ...wordData.day2];
 const words = IS_TEST_MODE ? allWords.slice(0, 2) : allWords;
 
 /* ---------- 2. 상태 관리 ---------- */
@@ -305,7 +310,7 @@ function showResults() {
                     },
                 },
                 {
-                    title: '나도 Word30 앱 써보기',
+                    title: '나도 Trigger Voca 앱 써보기',
                     link: {
                         mobileWebUrl: 'https://word30.pages.dev',
                         webUrl: 'https://word30.pages.dev',
@@ -351,17 +356,33 @@ buttons.forEach(btn => {
     };
 });
 
-startBtn.addEventListener("click", function(e) {
-    e.preventDefault(); 
-    // 탭 UI에서 퀴즈 앱 화면으로 전환
+function startSession(dayKey) {
     document.getElementById('startOverlay').style.display = "none";
     document.querySelector('.app').style.display = "block";
-    
-    currentSessionWords = getTargetWords();
+
+    if (dayKey && wordData[dayKey]) {
+        currentSessionWords = IS_TEST_MODE ? wordData[dayKey].slice(0, 2) : wordData[dayKey];
+        isReviewMode = false;
+    } else {
+        currentSessionWords = getTargetWords();
+    }
+
     loadWord();
-    
+
     if (recognition) {
         try { recognition.start(); } catch(err) {}
     }
     startTimer();
+}
+
+startBtn.addEventListener("click", function(e) {
+    e.preventDefault();
+    startSession(null);
 }, { passive: false });
+
+document.querySelectorAll('.start-day-btn').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        startSession(this.dataset.day);
+    });
+});
