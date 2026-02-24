@@ -6,7 +6,7 @@ if (typeof Kakao !== 'undefined' && !Kakao.isInitialized()) {
 }
 
 /* ---------- 1. 데이터 설정 ---------- */
-const IS_TEST_MODE = false; 
+const IS_TEST_MODE = true; 
 
 const wordData = {
     day1: [
@@ -237,6 +237,7 @@ function saveResult(wordObj, status) {
 
 // 🚨 [변경됨] 결과 화면 출력 로직 (정답률 계산 및 카카오 공유 버튼 추가)
 function showResults() {
+    updateLobbyStats();
     if (recognition) {
         try { recognition.stop(); } catch(e) {}
     }
@@ -386,3 +387,16 @@ document.querySelectorAll('.start-day-btn').forEach(btn => {
         startSession(this.dataset.day);
     });
 });
+
+function updateLobbyStats() {
+    try {
+        const raw = localStorage.getItem('word30_history');
+        const history = raw ? JSON.parse(raw) : { wrongs: [] };
+        const wrongs = history.wrongs || [];
+        const uniqueCount = new Set(wrongs.map(w => w.word || w)).size;
+        const el = document.getElementById('weakListCount');
+        if (el) el.textContent = uniqueCount + " 단어";
+    } catch(e) {}
+}
+
+updateLobbyStats();
