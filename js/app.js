@@ -306,8 +306,8 @@ function showResults() {
                 {
                     title: '시크릿 노션 VOD 입장',
                     link: {
-                        mobileWebUrl: 'https://대표님의_노션_주소_입력', // 🚨 실제 노션 링크로 변경 필수
-                        webUrl: 'https://대표님의_노션_주소_입력',
+                        mobileWebUrl: 'https://www.notion.so/3-26ea81fd05e580869538e10685e3cdf2', // 🚨 실제 노션 링크로 변경 필수
+                        webUrl: 'https://www.notion.so/3-26ea81fd05e580869538e10685e3cdf2',
                     },
                 },
                 {
