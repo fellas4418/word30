@@ -6,7 +6,7 @@ if (typeof Kakao !== 'undefined' && !Kakao.isInitialized()) {
 }
 
 /* ---------- 1. 데이터 설정 ---------- */
-const IS_TEST_MODE = true; 
+const IS_TEST_MODE = false; 
 
 const wordData = {
     day1: [
