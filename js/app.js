@@ -422,9 +422,15 @@ window.addEventListener('load', function() {
     const existing = localStorage.getItem('word30_user');
     const modal = document.getElementById('registrationModal');
     const lobby = document.querySelector('.lobby-overlay');
+    
     if (!existing) {
+        // 처음 온 사람이면 팝업 열기
         if (modal) modal.style.display = 'flex';
         if (lobby) lobby.style.display = 'none';
+    } else {
+        // 🚨 가입한 사람이면 팝업 무조건 숨기고 로비 띄우기 (버그 해결)
+        if (modal) modal.style.display = 'none';
+        if (lobby) lobby.style.display = 'flex'; 
     }
 });
 

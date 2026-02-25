@@ -34,7 +34,7 @@
     </div>
     <div class="app" style="display: none;">
         <div class="progress" style="display: flex; justify-content: space-between; align-items: center;">
-            <span class="doodle-badge">남은 문제: <span id="remaining">30</span></span>
+            <span class="doodle-badge">남은 문제: <span id="remaining">30</span> <span style="font-size: 11px; color: #e74c3c; margin-left: 5px; font-weight: bold;">🔊 폰 소리를 켜주세요!</span></span>
             <button id="quitBtn" style="background: none; border: 2px solid #2C3639; border-radius: 8px; padding: 4px 10px; font-weight: bold; cursor: pointer; color: #2C3639;">중단하기</button>
         </div>
     
@@ -50,34 +50,17 @@
         </div>
     </div>
     
-    <div id="startOverlay" class="lobby-overlay">
-        <div class="lobby-container">
-            <div class="header-section text-center">
-                <h1 class="brand-title">Trigger<br>Voca</h1>
-            </div>
-
-            <div class="doodle-box main-action-card text-center">
-                <img src="https://cdn-icons-png.flaticon.com/512/2941/2941566.png" alt="book" class="deco-icon">
-                <h2>오늘의 학습</h2>
-                <p>목표 단어: <strong>30개</strong></p>
-                <button id="startBtn" class="doodle-btn primary-btn">학습 시작하기</button>
-            </div>
-
-            <div class="grid-2col">
-                <div class="doodle-box mini-card text-center">
-                    <h3>내 단어장</h3>
-                    <p>120 단어</p>
-                </div>
-                <div class="doodle-box mini-card text-center" onclick="startReview()" style="cursor: pointer;">
-                    <h3>오답 노트</h3>
-                    <p id="weakListCount">0 단어</p>
-                </div>
-            </div>
-
-            <button onclick="const sec = document.getElementById('curriculumSection'); sec.style.display = (sec.style.display === 'none') ? 'block' : 'none';" class="doodle-btn" style="width: 100%; margin-bottom: 20px;">📺 3시간 영문법 (열기 / 접기)</button>
-            
-            <div id="curriculumSection" class="doodle-box list-card" style="display: none;">
-                <h3>커리큘럼</h3>
+    <div class="lobby-overlay">
+        <div class="card doodle-box">
+            <h1 class="title">Trigger Voca</h1>
+            <p style="text-align: center; color: #1F3B34; margin-bottom: 20px;">단어를 보면 반사적으로 뜻이 튀어나온다!</p>
+    
+            <button onclick="startReview()" class="doodle-btn" style="width: 100%; margin-bottom: 20px; background-color: #2C3639; color: white;">
+                🔥 나의 오답 노트 <span id="weakListCount" style="color: #FF6B3D;">0 단어</span>
+            </button>
+    
+            <div id="curriculumSection" style="display: block;">
+                <h3 style="color: #1F3B34; margin-bottom: 15px; text-align: left;">📅 트리거 보카 매일 학습</h3>
                 <ul class="curriculum-list">
                     <li>
                         <span>Day 1. 문장의 뼈대 동사</span>
