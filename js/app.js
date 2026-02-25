@@ -54,7 +54,7 @@ let interval;
 let hasSpoken = false;
 let isReviewMode = false;
 let sessionResults = []; 
-let currentDayKey = null; // 🚨 현재 풀고 있는 Day를 기억하는 변수 추가
+let currentDayKey = null; 
 
 /* ---------- 3. DOM 요소 ---------- */
 const wordEl = document.getElementById("word");
@@ -62,7 +62,6 @@ const timerEl = document.getElementById("timer");
 const remainingEl = document.getElementById("remaining");
 const buttons = document.querySelectorAll(".pos-buttons button");
 const startBtn = document.getElementById("startBtn");
-const overlay = document.getElementById("startOverlay");
 const cardEl = document.getElementById("wordCard");
 
 const feedbackEl = document.createElement("div");
@@ -208,7 +207,6 @@ function saveResult(wordObj, status) {
     let history = JSON.parse(localStorage.getItem('word30_history') || '{"wrongs":[]}');
     if (status === "오답") {
         if (!history.wrongs.some(w => w.word === wordObj.word)) {
-            // 🚨 타임스탬프 꼬리표 추가
             history.wrongs.push({
                 ...wordObj,
                 timestamp: new Date().toISOString()
@@ -232,13 +230,12 @@ function showResults() {
     const correctWords = sessionResults.filter(res => res.status === "정답").length;
     const accuracy = totalWords > 0 ? Math.round((correctWords / totalWords) * 100) : 0;
 
-    // 🚨 정답률 80% 이상이면 현재 Day 클리어 처리 (자물쇠 해금용)
     if (currentDayKey && accuracy >= 80) {
         let progress = JSON.parse(localStorage.getItem('word30_progress') || '{}');
         progress[currentDayKey] = true;
         localStorage.setItem('word30_progress', JSON.stringify(progress));
     }
-    updateCurriculumUI(); // UI 즉시 반영
+    updateCurriculumUI(); 
 
     let resultHTML = `<div class="card doodle-box" style="padding: 30px 20px; text-align: left; overflow-y: auto; max-height: 80vh;">`;
     resultHTML += `<h2 style="margin-top:0; color:#1F3B34; text-align:center;">학습 결과</h2>`;
@@ -345,10 +342,11 @@ buttons.forEach(btn => {
 });
 
 function startSession(dayKey) {
-    document.getElementById('startOverlay').style.display = "none";
+    // 🚨 이전의 startOverlay 대신 lobby-overlay를 숨기도록 수정
+    const lobby = document.querySelector('.lobby-overlay');
+    if (lobby) lobby.style.display = "none";
     document.querySelector('.app').style.display = "block";
 
-    // 🚨 현재 무슨 Day를 푸는지 기록
     if (dayKey && wordData[dayKey]) {
         currentSessionWords = IS_TEST_MODE ? wordData[dayKey].slice(0, 2) : wordData[dayKey];
         currentDayKey = dayKey; 
@@ -378,13 +376,15 @@ function startReview() {
     }
     
     isReviewMode = true;
-    currentSessionWords = history.wrongs.slice(0, 10); // 최대 10개만 복습
-    currentDayKey = null; // 복습은 자물쇠에 영향 안 줌
+    currentSessionWords = history.wrongs.slice(0, 10); 
+    currentDayKey = null; 
     currentIndex = 0;
     sessionResults = [];
     hasSpoken = false;
 
-    document.getElementById('startOverlay').style.display = "none";
+    // 🚨 여기도 lobby-overlay 숨기기로 변경
+    const lobby = document.querySelector('.lobby-overlay');
+    if (lobby) lobby.style.display = "none";
     document.querySelector('.app').style.display = "block";
 
     loadWord();
@@ -394,10 +394,13 @@ function startReview() {
     startTimer();
 }
 
-startBtn.addEventListener("click", function(e) {
-    e.preventDefault();
-    startSession(null);
-}, { passive: false });
+// 🚨 에러의 주범이었던 기존 startBtn 안전장치 추가
+if (startBtn) {
+    startBtn.addEventListener("click", function(e) {
+        e.preventDefault();
+        startSession(null);
+    }, { passive: false });
+}
 
 document.querySelectorAll('.start-day-btn').forEach(btn => {
     btn.addEventListener('click', function(e) {
@@ -425,17 +428,14 @@ window.addEventListener('load', function() {
     const lobby = document.querySelector('.lobby-overlay');
     
     if (!existing) {
-        // 처음 온 사람이면 팝업 열기
         if (modal) modal.style.display = 'flex';
         if (lobby) lobby.style.display = 'none';
     } else {
-        // 가입한 사람이면 팝업 무조건 숨기고 로비 띄우기
         if (modal) modal.style.display = 'none';
         if (lobby) lobby.style.display = 'flex'; 
     }
 });
 
-// 🚨 아까 실수로 날아갔던 '버튼 클릭' 로직 복구 완료!
 document.getElementById('saveUserBtn').addEventListener('click', function() {
     const nameVal = document.getElementById('userName').value.trim();
     const contactVal = document.getElementById('userContact').value.trim();
