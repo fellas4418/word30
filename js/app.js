@@ -414,6 +414,7 @@ document.getElementById('quitBtn').addEventListener('click', () => {
     }
 });
 
+// ── 회원 등록 모달 로직 (팝업창) ──────────────────────────────
 function generateRandomID() {
     return 'uid_' + Math.random().toString(36).substr(2, 9);
 }
@@ -425,6 +426,10 @@ window.addEventListener('load', function() {
     if (!existing) {
         if (modal) modal.style.display = 'flex';
         if (lobby) lobby.style.display = 'none';
+    } else {
+        // 🚨 여기에 팝업 지옥을 막는 안전장치 추가!
+        if (modal) modal.style.display = 'none';
+        if (lobby) lobby.style.display = 'flex'; 
     }
 });
 
