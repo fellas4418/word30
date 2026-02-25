@@ -4,7 +4,7 @@ if (typeof Kakao !== 'undefined' && !Kakao.isInitialized()) {
 }
 
 /* ---------- 1. 데이터 설정 ---------- */
-const IS_TEST_MODE = false; // 🚨 테스트 끄고 실전 모드로 변경
+const IS_TEST_MODE = false; 
 
 const wordData = {
     day1: [
@@ -54,6 +54,7 @@ let interval;
 let hasSpoken = false;
 let isReviewMode = false;
 let sessionResults = []; 
+let currentDayKey = null; // 🚨 현재 풀고 있는 Day를 기억하는 변수 추가
 
 /* ---------- 3. DOM 요소 ---------- */
 const wordEl = document.getElementById("word");
@@ -147,7 +148,6 @@ function loadWord() {
     });
     hasSpoken = false;
 
-    // ── TTS 자동 발음 (단어가 화면에 뜰 때 원어민 소리 재생) ──
     if (window.speechSynthesis && currentSessionWords && currentSessionWords[currentIndex]) {
         window.speechSynthesis.cancel();
         const utter = new SpeechSynthesisUtterance(currentSessionWords[currentIndex].word);
@@ -208,7 +208,11 @@ function saveResult(wordObj, status) {
     let history = JSON.parse(localStorage.getItem('word30_history') || '{"wrongs":[]}');
     if (status === "오답") {
         if (!history.wrongs.some(w => w.word === wordObj.word)) {
-            history.wrongs.push(wordObj);
+            // 🚨 타임스탬프 꼬리표 추가
+            history.wrongs.push({
+                ...wordObj,
+                timestamp: new Date().toISOString()
+            });
         }
     } else if (status === "정답" && isReviewMode) {
         history.wrongs = history.wrongs.filter(w => w.word !== wordObj.word);
@@ -227,6 +231,14 @@ function showResults() {
     const totalWords = sessionResults.length;
     const correctWords = sessionResults.filter(res => res.status === "정답").length;
     const accuracy = totalWords > 0 ? Math.round((correctWords / totalWords) * 100) : 0;
+
+    // 🚨 정답률 80% 이상이면 현재 Day 클리어 처리 (자물쇠 해금용)
+    if (currentDayKey && accuracy >= 80) {
+        let progress = JSON.parse(localStorage.getItem('word30_progress') || '{}');
+        progress[currentDayKey] = true;
+        localStorage.setItem('word30_progress', JSON.stringify(progress));
+    }
+    updateCurriculumUI(); // UI 즉시 반영
 
     let resultHTML = `<div class="card doodle-box" style="padding: 30px 20px; text-align: left; overflow-y: auto; max-height: 80vh;">`;
     resultHTML += `<h2 style="margin-top:0; color:#1F3B34; text-align:center;">학습 결과</h2>`;
@@ -261,14 +273,12 @@ function showResults() {
 
     document.getElementById('restartBtn').onclick = () => location.reload();
     
-    // ── 카카오톡 공유 이벤트 (저장된 이름 불러와서 제목에 넣기) ──
     document.getElementById('kakaoShareBtn').onclick = () => {
         if (typeof Kakao === 'undefined' || !Kakao.isInitialized()) {
             alert("카카오 공유 기능이 로드되지 않았습니다. 인터넷을 확인해주세요.");
             return;
         }
 
-        // 로컬 스토리지에서 학생 이름 꺼내오기
         const rawUser = localStorage.getItem('word30_user');
         const userNameForShare = rawUser ? JSON.parse(rawUser).name : '익명';
 
@@ -338,11 +348,14 @@ function startSession(dayKey) {
     document.getElementById('startOverlay').style.display = "none";
     document.querySelector('.app').style.display = "block";
 
+    // 🚨 현재 무슨 Day를 푸는지 기록
     if (dayKey && wordData[dayKey]) {
         currentSessionWords = IS_TEST_MODE ? wordData[dayKey].slice(0, 2) : wordData[dayKey];
+        currentDayKey = dayKey; 
         isReviewMode = false;
     } else {
         currentSessionWords = IS_TEST_MODE ? getTargetWords().slice(0, 2) : getTargetWords();
+        currentDayKey = null;
         isReviewMode = false;
     }
 
@@ -357,7 +370,6 @@ function startSession(dayKey) {
     startTimer();
 }
 
-// 🚨 오답 노트 클릭 시 복습 시작하는 함수 추가
 function startReview() {
     let history = JSON.parse(localStorage.getItem('word30_history') || '{"wrongs":[]}');
     if (!history.wrongs || history.wrongs.length === 0) {
@@ -367,6 +379,7 @@ function startReview() {
     
     isReviewMode = true;
     currentSessionWords = history.wrongs.slice(0, 10); // 최대 10개만 복습
+    currentDayKey = null; // 복습은 자물쇠에 영향 안 줌
     currentIndex = 0;
     sessionResults = [];
     hasSpoken = false;
@@ -401,7 +414,6 @@ document.getElementById('quitBtn').addEventListener('click', () => {
     }
 });
 
-// ── 회원 등록 모달 로직 ──────────────────────────────
 function generateRandomID() {
     return 'uid_' + Math.random().toString(36).substr(2, 9);
 }
@@ -454,4 +466,22 @@ function updateLobbyStats() {
     } catch(e) {}
 }
 
+// 🚨 자물쇠 UI 업데이트 함수
+function updateCurriculumUI() {
+    let progress = JSON.parse(localStorage.getItem('word30_progress') || '{}');
+    const day2Btn = document.getElementById('btn-day2');
+    if (day2Btn) {
+        if (progress['day1']) { // Day1 클리어 시
+            day2Btn.textContent = '시작';
+            day2Btn.style.backgroundColor = '#2ecc71';
+            day2Btn.disabled = false;
+        } else {
+            day2Btn.textContent = '🔒 잠김';
+            day2Btn.style.backgroundColor = '#95a5a6';
+            day2Btn.disabled = true;
+        }
+    }
+}
+
 updateLobbyStats();
+updateCurriculumUI();
