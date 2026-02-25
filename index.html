@@ -17,25 +17,13 @@
             <label style="display: block; text-align: left; font-size: 12px; margin-bottom: 20px; color: #555;">
                 <input type="checkbox" id="privacyConsent"> [필수] 개인정보 수집 및 이벤트 알림에 동의합니다.
             </label>
-            <button id="saveUserBtn" class="doodle-btn" style="width: 100%; background-color: #FF6B3D; color: white;">학습 시작하기</button>
-        </div>
-    </div>
-    <div id="registrationModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center;">
-        <div style="background: white; padding: 30px; border-radius: 15px; width: 80%; max-width: 400px; text-align: center;">
-            <h2 style="color: #1F3B34; margin-top: 0;">환영합니다!</h2>
-            <p style="font-size: 14px; color: #666; margin-bottom: 20px;">결과 리포트에 표시될 이름을 적어주세요.</p>
-            <input type="text" id="userName" placeholder="이름 (필수)" style="width: 100%; padding: 10px; margin-bottom: 10px; border: 2px solid #ddd; border-radius: 8px; box-sizing: border-box;">
-            <input type="text" id="userContact" placeholder="연락처 입력 시 VOD 할인 혜택!" style="width: 100%; padding: 10px; margin-bottom: 15px; border: 2px solid #ddd; border-radius: 8px; box-sizing: border-box;">
-            <label style="display: block; text-align: left; font-size: 12px; margin-bottom: 20px; color: #555;">
-                <input type="checkbox" id="privacyConsent"> [필수] 개인정보 수집 및 이벤트 알림에 동의합니다.
-            </label>
-            <button id="saveUserBtn" class="doodle-btn" style="width: 100%; background-color: #FF6B3D; color: white;">학습 시작하기</button>
+            <button id="saveUserBtn" class="doodle-btn" style="width: 100%; background-color: #FF6B3D; color: white; border: none; padding: 15px; border-radius: 10px; font-weight: bold; cursor: pointer;">학습 시작하기</button>
         </div>
     </div>
 
     <div class="app" style="display: none;">
         <div class="progress" style="display: flex; justify-content: space-between; align-items: center;">
-            <span class="doodle-badge">남은 문제: <span id="remaining 🔊 폰 소리를 켜주세요!">30</span> <span style="font-size: 11px; color: #e74c3c; margin-left: 5px; font-weight: bold;">🔊 폰 소리를 켜주세요!</span></span>
+            <span class="doodle-badge">남은 문제: <span id="remaining">30</span> <span style="font-size: 11px; color: #e74c3c; margin-left: 5px; font-weight: bold;">🔊 폰 소리를 켜주세요!</span></span>
             <button id="quitBtn" style="background: none; border: 2px solid #2C3639; border-radius: 8px; padding: 4px 10px; font-weight: bold; cursor: pointer; color: #2C3639;">중단하기</button>
         </div>
     
@@ -76,7 +64,7 @@
             </div>
 
             <div id="curriculumSection" class="doodle-box list-card" style="margin-top: 20px;">
-                <h3>📅 매일 학습 커리큘럼</h3>
+                <h3>📅 트리거 보카 매일 학습</h3>
                 <ul class="curriculum-list">
                     <li>
                         <span>Day 1. 문장의 뼈대 동사</span>
@@ -95,6 +83,6 @@
         </div>
     </div>
     
-    <script src="js/app.js?v=6"></script>
+    <script src="js/app.js?v=9"></script>
 </body>
 </html>

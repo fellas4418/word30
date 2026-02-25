@@ -54,7 +54,7 @@ let interval;
 let hasSpoken = false;
 let isReviewMode = false;
 let sessionResults = []; 
-let currentDayKey = null; // 🚨 현재 풀고 있는 Day를 기억하는 변수 추가
+let currentDayKey = null; 
 
 /* ---------- 3. DOM 요소 ---------- */
 const wordEl = document.getElementById("word");
@@ -148,6 +148,7 @@ function loadWord() {
     });
     hasSpoken = false;
 
+    // 🔊 자동 발음 로직
     if (window.speechSynthesis && currentSessionWords && currentSessionWords[currentIndex]) {
         window.speechSynthesis.cancel();
         const utter = new SpeechSynthesisUtterance(currentSessionWords[currentIndex].word);
@@ -208,7 +209,6 @@ function saveResult(wordObj, status) {
     let history = JSON.parse(localStorage.getItem('word30_history') || '{"wrongs":[]}');
     if (status === "오답") {
         if (!history.wrongs.some(w => w.word === wordObj.word)) {
-            // 🚨 타임스탬프 꼬리표 추가
             history.wrongs.push({
                 ...wordObj,
                 timestamp: new Date().toISOString()
@@ -232,13 +232,13 @@ function showResults() {
     const correctWords = sessionResults.filter(res => res.status === "정답").length;
     const accuracy = totalWords > 0 ? Math.round((correctWords / totalWords) * 100) : 0;
 
-    // 🚨 정답률 80% 이상이면 현재 Day 클리어 처리 (자물쇠 해금용)
+    // 🚨 정답률 80% 자물쇠 로직
     if (currentDayKey && accuracy >= 80) {
         let progress = JSON.parse(localStorage.getItem('word30_progress') || '{}');
         progress[currentDayKey] = true;
         localStorage.setItem('word30_progress', JSON.stringify(progress));
     }
-    updateCurriculumUI(); // UI 즉시 반영
+    updateCurriculumUI(); 
 
     let resultHTML = `<div class="card doodle-box" style="padding: 30px 20px; text-align: left; overflow-y: auto; max-height: 80vh;">`;
     resultHTML += `<h2 style="margin-top:0; color:#1F3B34; text-align:center;">학습 결과</h2>`;
@@ -345,10 +345,10 @@ buttons.forEach(btn => {
 });
 
 function startSession(dayKey) {
-    document.getElementById('startOverlay').style.display = "none";
+    const lobby = document.getElementById('startOverlay');
+    if (lobby) lobby.style.display = "none";
     document.querySelector('.app').style.display = "block";
 
-    // 🚨 현재 무슨 Day를 푸는지 기록
     if (dayKey && wordData[dayKey]) {
         currentSessionWords = IS_TEST_MODE ? wordData[dayKey].slice(0, 2) : wordData[dayKey];
         currentDayKey = dayKey; 
@@ -378,13 +378,14 @@ function startReview() {
     }
     
     isReviewMode = true;
-    currentSessionWords = history.wrongs.slice(0, 10); // 최대 10개만 복습
-    currentDayKey = null; // 복습은 자물쇠에 영향 안 줌
+    currentSessionWords = history.wrongs.slice(0, 10); 
+    currentDayKey = null; 
     currentIndex = 0;
     sessionResults = [];
     hasSpoken = false;
 
-    document.getElementById('startOverlay').style.display = "none";
+    const lobby = document.getElementById('startOverlay');
+    if (lobby) lobby.style.display = "none";
     document.querySelector('.app').style.display = "block";
 
     loadWord();
@@ -394,10 +395,12 @@ function startReview() {
     startTimer();
 }
 
-startBtn.addEventListener("click", function(e) {
-    e.preventDefault();
-    startSession(null);
-}, { passive: false });
+if (startBtn) {
+    startBtn.addEventListener("click", function(e) {
+        e.preventDefault();
+        startSession(null);
+    }, { passive: false });
+}
 
 document.querySelectorAll('.start-day-btn').forEach(btn => {
     btn.addEventListener('click', function(e) {
@@ -422,12 +425,12 @@ function generateRandomID() {
 window.addEventListener('load', function() {
     const existing = localStorage.getItem('word30_user');
     const modal = document.getElementById('registrationModal');
-    const lobby = document.querySelector('.lobby-overlay');
+    const lobby = document.getElementById('startOverlay');
+    
     if (!existing) {
         if (modal) modal.style.display = 'flex';
         if (lobby) lobby.style.display = 'none';
     } else {
-        // 🚨 여기에 팝업 지옥을 막는 안전장치 추가!
         if (modal) modal.style.display = 'none';
         if (lobby) lobby.style.display = 'flex'; 
     }
@@ -456,10 +459,11 @@ document.getElementById('saveUserBtn').addEventListener('click', function() {
     localStorage.setItem('word30_user', JSON.stringify(userData));
 
     document.getElementById('registrationModal').style.display = 'none';
-    const lobby = document.querySelector('.lobby-overlay');
+    const lobby = document.getElementById('startOverlay');
     if (lobby) lobby.style.display = 'flex';
 });
 
+// ── 로비 통계 및 자물쇠 업데이트 ──
 function updateLobbyStats() {
     try {
         const raw = localStorage.getItem('word30_history');
@@ -471,12 +475,11 @@ function updateLobbyStats() {
     } catch(e) {}
 }
 
-// 🚨 자물쇠 UI 업데이트 함수
 function updateCurriculumUI() {
     let progress = JSON.parse(localStorage.getItem('word30_progress') || '{}');
     const day2Btn = document.getElementById('btn-day2');
     if (day2Btn) {
-        if (progress['day1']) { // Day1 클리어 시
+        if (progress['day1']) { 
             day2Btn.textContent = '시작';
             day2Btn.style.backgroundColor = '#2ecc71';
             day2Btn.disabled = false;
