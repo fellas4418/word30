@@ -146,6 +146,15 @@ function loadWord() {
         btn.disabled = true;
     });
     hasSpoken = false;
+
+    // ── TTS 자동 발음 (단어가 화면에 뜰 때 원어민 소리 재생) ──
+    if (window.speechSynthesis && currentSessionWords && currentSessionWords[currentIndex]) {
+        window.speechSynthesis.cancel();
+        const utter = new SpeechSynthesisUtterance(currentSessionWords[currentIndex].word);
+        utter.lang = 'en-US';
+        utter.rate = 0.9;
+        window.speechSynthesis.speak(utter);
+    }
 }
 
 function startTimer() {
@@ -252,15 +261,20 @@ function showResults() {
 
     document.getElementById('restartBtn').onclick = () => location.reload();
     
+    // ── 카카오톡 공유 이벤트 (저장된 이름 불러와서 제목에 넣기) ──
     document.getElementById('kakaoShareBtn').onclick = () => {
         if (typeof Kakao === 'undefined' || !Kakao.isInitialized()) {
             alert("카카오 공유 기능이 로드되지 않았습니다. 인터넷을 확인해주세요.");
             return;
         }
 
+        // 로컬 스토리지에서 학생 이름 꺼내오기
+        const rawUser = localStorage.getItem('word30_user');
+        const userNameForShare = rawUser ? JSON.parse(rawUser).name : '익명';
+
         Kakao.Share.sendDefault({
             objectType: 'text',
-            text: `📊 [오단완 학습 리포트]\n학생의 오늘의 단어 학습이 완료되었습니다!\n\n✅ 정답률: ${correctWords}/${totalWords} (${accuracy}%)\n\n----------------------\n🔒 [루크 쌤의 시크릿 영문법 라운지]\n영단어를 외워도 문장 해석이 안 된다면?\n1:1 과외 대기생을 위한 '3시간 코어 영문법'\n👉 아래 버튼을 눌러 라운지에 입장하세요.`,
+            text: `📊 [${userNameForShare} 학생의 오단완 학습 리포트]\n학생의 오늘의 단어 학습이 완료되었습니다!\n\n✅ 정답률: ${correctWords}/${totalWords} (${accuracy}%)\n\n----------------------\n🔒 [루크 쌤의 시크릿 영문법 라운지]\n영단어를 외워도 문장 해석이 안 된다면?\n1:1 과외 대기생을 위한 '3시간 코어 영문법'\n👉 아래 버튼을 눌러 라운지에 입장하세요.`,
             link: {
                 mobileWebUrl: 'https://word30.pages.dev',
                 webUrl: 'https://word30.pages.dev',
@@ -385,6 +399,48 @@ document.getElementById('quitBtn').addEventListener('click', () => {
         if(recognition) { try { recognition.stop(); } catch(e){} }
         showResults();
     }
+});
+
+// ── 회원 등록 모달 로직 ──────────────────────────────
+function generateRandomID() {
+    return 'uid_' + Math.random().toString(36).substr(2, 9);
+}
+
+window.addEventListener('load', function() {
+    const existing = localStorage.getItem('word30_user');
+    const modal = document.getElementById('registrationModal');
+    const lobby = document.querySelector('.lobby-overlay');
+    if (!existing) {
+        if (modal) modal.style.display = 'flex';
+        if (lobby) lobby.style.display = 'none';
+    }
+});
+
+document.getElementById('saveUserBtn').addEventListener('click', function() {
+    const nameVal = document.getElementById('userName').value.trim();
+    const contactVal = document.getElementById('userContact').value.trim();
+    const consent = document.getElementById('privacyConsent').checked;
+
+    if (!nameVal) {
+        alert('이름을 입력해주세요.');
+        return;
+    }
+    if (!consent) {
+        alert('개인정보 수집 동의는 필수입니다.');
+        return;
+    }
+
+    const userData = {
+        name: nameVal,
+        contact: contactVal,
+        id: generateRandomID(),
+        registeredAt: new Date().toISOString()
+    };
+    localStorage.setItem('word30_user', JSON.stringify(userData));
+
+    document.getElementById('registrationModal').style.display = 'none';
+    const lobby = document.querySelector('.lobby-overlay');
+    if (lobby) lobby.style.display = 'flex';
 });
 
 function updateLobbyStats() {

@@ -8,7 +8,30 @@
     <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.0/kakao.min.js"></script>
 </head>
 <body>
-
+    <div id="registrationModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:9999; display:flex; align-items:center; justify-content:center;">
+        <div style="background:#fff; border-radius:16px; padding:32px 24px; width:90%; max-width:400px; box-shadow:0 8px 32px rgba(0,0,0,0.2); font-family:inherit;">
+            <h2 style="margin:0 0 6px 0; font-size:20px; font-weight:bold;">📝 학습 시작 전 등록</h2>
+            <p style="margin:0 0 20px 0; font-size:13px; color:#888;">이름을 입력하면 나만의 학습 리포트를 받을 수 있어요!</p>
+    
+            <label style="font-size:13px; font-weight:bold; display:block; margin-bottom:6px;">이름 <span style="color:red;">*</span></label>
+            <input id="userName" type="text" placeholder="이름을 입력하세요" required
+                style="width:100%; padding:10px 12px; border:2px solid #2C3639; border-radius:10px; font-size:15px; box-sizing:border-box; margin-bottom:14px;" />
+    
+            <label style="font-size:13px; font-weight:bold; display:block; margin-bottom:6px;">연락처 (선택)</label>
+            <input id="userContact" type="text" placeholder="연락처 입력 시 3시간 영문법 VOD 할인 혜택!"
+                style="width:100%; padding:10px 12px; border:2px solid #ccc; border-radius:10px; font-size:14px; box-sizing:border-box; margin-bottom:14px;" />
+    
+            <label style="display:flex; align-items:flex-start; gap:8px; font-size:12px; color:#444; margin-bottom:20px; cursor:pointer;">
+                <input id="privacyConsent" type="checkbox" style="margin-top:2px; width:16px; height:16px; flex-shrink:0;" />
+                <span>[필수] 개인정보 수집 및 이벤트 알림에 동의합니다.</span>
+            </label>
+    
+            <button id="saveUserBtn"
+                style="width:100%; padding:13px; background:#2C3639; color:#fff; border:none; border-radius:12px; font-size:16px; font-weight:bold; cursor:pointer;">
+                학습 시작하기 🚀
+            </button>
+        </div>
+    </div>
     <div class="app" style="display: none;">
         <div class="progress" style="display: flex; justify-content: space-between; align-items: center;">
             <span class="doodle-badge">남은 문제: <span id="remaining">30</span></span>
