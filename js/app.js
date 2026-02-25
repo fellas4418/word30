@@ -414,6 +414,7 @@ document.getElementById('quitBtn').addEventListener('click', () => {
     }
 });
 
+// ── 회원 등록 모달 로직 (팝업창) ──────────────────────────────
 function generateRandomID() {
     return 'uid_' + Math.random().toString(36).substr(2, 9);
 }
@@ -428,12 +429,13 @@ window.addEventListener('load', function() {
         if (modal) modal.style.display = 'flex';
         if (lobby) lobby.style.display = 'none';
     } else {
-        // 🚨 가입한 사람이면 팝업 무조건 숨기고 로비 띄우기 (버그 해결)
+        // 가입한 사람이면 팝업 무조건 숨기고 로비 띄우기
         if (modal) modal.style.display = 'none';
         if (lobby) lobby.style.display = 'flex'; 
     }
 });
 
+// 🚨 아까 실수로 날아갔던 '버튼 클릭' 로직 복구 완료!
 document.getElementById('saveUserBtn').addEventListener('click', function() {
     const nameVal = document.getElementById('userName').value.trim();
     const contactVal = document.getElementById('userContact').value.trim();
@@ -461,6 +463,7 @@ document.getElementById('saveUserBtn').addEventListener('click', function() {
     if (lobby) lobby.style.display = 'flex';
 });
 
+// ── 로비 통계 및 자물쇠 업데이트 ──
 function updateLobbyStats() {
     try {
         const raw = localStorage.getItem('word30_history');
@@ -472,12 +475,11 @@ function updateLobbyStats() {
     } catch(e) {}
 }
 
-// 🚨 자물쇠 UI 업데이트 함수
 function updateCurriculumUI() {
     let progress = JSON.parse(localStorage.getItem('word30_progress') || '{}');
     const day2Btn = document.getElementById('btn-day2');
     if (day2Btn) {
-        if (progress['day1']) { // Day1 클리어 시
+        if (progress['day1']) { 
             day2Btn.textContent = '시작';
             day2Btn.style.backgroundColor = '#2ecc71';
             day2Btn.disabled = false;
