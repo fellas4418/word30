@@ -10,8 +10,9 @@
 <body>
 
     <div class="app" style="display: none;">
-        <div class="progress">
+        <div class="progress" style="display: flex; justify-content: space-between; align-items: center;">
             <span class="doodle-badge">남은 문제: <span id="remaining">30</span></span>
+            <button id="quitBtn" style="background: none; border: 2px solid #2C3639; border-radius: 8px; padding: 4px 10px; font-weight: bold; cursor: pointer; color: #2C3639;">중단하기</button>
         </div>
     
         <div class="card doodle-box" id="wordCard">
@@ -50,7 +51,7 @@
                 </div>
             </div>
 
-            <button onclick="document.getElementById('curriculumSection').style.display='block'; this.style.display='none';" class="doodle-btn" style="width: 100%; margin-bottom: 20px;">📺 3시간 영문법 보기</button>
+            <button onclick="const sec = document.getElementById('curriculumSection'); sec.style.display = (sec.style.display === 'none') ? 'block' : 'none';" class="doodle-btn" style="width: 100%; margin-bottom: 20px;">📺 3시간 영문법 (열기 / 접기)</button>
             
             <div id="curriculumSection" class="doodle-box list-card" style="display: none;">
                 <h3>커리큘럼</h3>

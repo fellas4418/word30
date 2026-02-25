@@ -379,6 +379,14 @@ document.querySelectorAll('.start-day-btn').forEach(btn => {
     });
 });
 
+document.getElementById('quitBtn').addEventListener('click', () => {
+    if(confirm("학습을 중단하시겠습니까? 지금까지 푼 내용만 채점됩니다.")) {
+        clearInterval(interval);
+        if(recognition) { try { recognition.stop(); } catch(e){} }
+        showResults();
+    }
+});
+
 function updateLobbyStats() {
     try {
         const raw = localStorage.getItem('word30_history');
