@@ -23,19 +23,23 @@
 
     <div class="app" style="display: none;">
         <div class="progress" style="display: flex; justify-content: space-between; align-items: center;">
-            <span class="doodle-badge">남은 문제: <span id="remaining">30</span> <span style="font-size: 11px; color: #e74c3c; margin-left: 5px; font-weight: bold;">🔊 폰 소리를 켜주세요!</span></span>
+            <span class="doodle-badge">남은 문제: <span id="remaining">30</span></span>
             <button id="quitBtn" style="background: none; border: 2px solid #2C3639; border-radius: 8px; padding: 4px 10px; font-weight: bold; cursor: pointer; color: #2C3639;">중단하기</button>
         </div>
     
-        <div class="card doodle-box" id="wordCard">
-            <div id="word" class="word">준비 중...</div>
-            <div id="timer" class="timer">10</div>
+        <div class="card doodle-box" id="wordCard" style="cursor: pointer; padding-bottom: 40px; position: relative;">
+            <div id="word" class="word" style="margin-bottom: 10px;">준비 중...</div>
+            <div id="meaning" style="display: none; font-size: 26px; color: #FF6B3D; font-weight: 900; margin-top: 15px;"></div>
+            <div id="timer" class="timer" style="position: absolute; bottom: 15px; left: 0; right: 0;">10</div>
         </div>
     
-        <div class="pos-buttons">
-            <button data-pos="noun" class="doodle-btn" disabled>명사</button>
-            <button data-pos="verb" class="doodle-btn" disabled>동사</button>
-            <button data-pos="adj" class="doodle-btn" disabled>형용사</button>
+        <div id="actionMsg" style="text-align: center; margin-top: 20px; font-size: 18px; font-weight: bold; color: #1F3B34; background: #f1f2f6; padding: 15px; border-radius: 10px; border: 2px dashed #ccc;">
+            👆 뜻을 떠올리고 카드를 터치하세요!
+        </div>
+
+        <div id="oxButtons" style="display: none; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px;">
+            <button id="btnWrong" class="doodle-btn" style="background-color: #e74c3c; color: white; font-size: 20px; padding: 15px; border: none; border-radius: 12px; font-weight: 900; cursor: pointer;">❌ 몰랐다</button>
+            <button id="btnCorrect" class="doodle-btn" style="background-color: #2ecc71; color: white; font-size: 20px; padding: 15px; border: none; border-radius: 12px; font-weight: 900; cursor: pointer;">⭕ 알았다</button>
         </div>
     </div>
     
@@ -83,6 +87,6 @@
         </div>
     </div>
     
-    <script src="js/app.js?v=9"></script>
+    <script src="js/app.js?v=11"></script>
 </body>
 </html>

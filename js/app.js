@@ -6,6 +6,7 @@ if (typeof Kakao !== 'undefined' && !Kakao.isInitialized()) {
 /* ---------- 1. 데이터 설정 ---------- */
 const IS_TEST_MODE = false; 
 
+// 대표님 원본 엑셀 데이터 그대로 사용! (AI 노가다 불필요)
 const wordData = {
     day1: [
         { word: "abandon", pos: "verb", meaning: "포기하다" },
@@ -51,112 +52,93 @@ let currentSessionWords = [];
 let currentIndex = 0;
 let time = 10;
 let interval;
-let hasSpoken = false;
-let isReviewMode = false;
 let sessionResults = []; 
 let currentDayKey = null; 
+let isReviewMode = false;
+let isRevealed = false; // 카드가 뒤집혔는지 확인하는 변수
 
 /* ---------- 3. DOM 요소 ---------- */
 const wordEl = document.getElementById("word");
+const meaningEl = document.getElementById("meaning");
 const timerEl = document.getElementById("timer");
 const remainingEl = document.getElementById("remaining");
-const buttons = document.querySelectorAll(".pos-buttons button");
-const startBtn = document.getElementById("startBtn");
-const overlay = document.getElementById("startOverlay");
 const cardEl = document.getElementById("wordCard");
+const actionMsg = document.getElementById("actionMsg");
+const oxButtons = document.getElementById("oxButtons");
+const btnCorrect = document.getElementById("btnCorrect");
+const btnWrong = document.getElementById("btnWrong");
 
-const feedbackEl = document.createElement("div");
-feedbackEl.style.fontSize = "16px";
-feedbackEl.style.marginTop = "15px";
-feedbackEl.style.fontWeight = "bold";
-if(cardEl) cardEl.insertBefore(feedbackEl, timerEl);
-
-/* ---------- 4. 음성 인식 설정 ---------- */
-const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-let recognition;
-
-if (SpeechRecognition) {
-    recognition = new SpeechRecognition();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = "ko-KR"; 
-
-    recognition.onstart = () => {
-        if(cardEl && !hasSpoken) cardEl.style.borderColor = "#FF6B3D"; 
-    };
-
-    recognition.onend = () => {
-        if(cardEl && !hasSpoken) cardEl.style.borderColor = "transparent";
-        if (!hasSpoken && time > 0) {
-            try { recognition.start(); } catch(e) {}
-        }
-    };
-
-    recognition.onresult = (event) => {
-        let fullTranscript = "";
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-            fullTranscript += event.results[i][0].transcript;
-        }
-        
-        const transcript = fullTranscript.replace(/\s+/g, ""); 
-        const currentMeaning = currentSessionWords[currentIndex].meaning.replace(/\s+/g, "");
-        
-        feedbackEl.textContent = "인식 중: " + fullTranscript.trim();
-        feedbackEl.style.color = "#FF6B3D";
-
-        if (transcript.includes(currentMeaning)) {
-            if (!hasSpoken) {
-                hasSpoken = true;
-                feedbackEl.textContent = `✨ 뜻 정답: ${currentSessionWords[currentIndex].meaning}`; 
-                feedbackEl.style.color = "#2ecc71";
-                buttons.forEach(btn => btn.disabled = false);
-                timerEl.style.color = "#2ecc71";
-                wordEl.style.color = "#2ecc71";
-                if(cardEl) cardEl.style.borderColor = "#2ecc71"; 
-            }
-        }
-    };
-
-    recognition.onerror = (event) => { 
-        if (event.error === 'not-allowed') {
-            alert("마이크 권한이 차단되어 있습니다.");
-        }
-    };
-} else {
-    alert("이 브라우저는 음성 인식을 지원하지 않습니다.");
-}
-
-/* ---------- 5. 핵심 로직 ---------- */
+/* ---------- 4. 핵심 로직 (터치 플래시카드 방식) ---------- */
 function getTargetWords() {
     return words;
 }
 
 function loadWord() {
     const current = currentSessionWords[currentIndex];
+    
+    // 초기화: 단어만 보여주고 뜻은 숨김
     wordEl.textContent = current.word;
-    wordEl.style.color = "#1F3B34";
+    meaningEl.style.display = "none";
+    oxButtons.style.display = "none";
+    actionMsg.style.display = "block";
+    cardEl.style.borderColor = "transparent";
     
-    feedbackEl.textContent = "뜻을 소리내어 말해주세요";
-    feedbackEl.style.color = "#888";
-    
-    if(cardEl) cardEl.style.borderColor = "transparent"; 
     remainingEl.textContent = currentSessionWords.length - currentIndex;
-    
-    buttons.forEach(btn => {
-        btn.style.backgroundColor = "#FF6B3D";
-        btn.disabled = true;
-    });
-    hasSpoken = false;
+    isRevealed = false;
 
-    // 🔊 자동 발음 로직
-    if (window.speechSynthesis && currentSessionWords && currentSessionWords[currentIndex]) {
+    // 카드 터치 이벤트 활성화
+    cardEl.onclick = revealMeaning;
+
+    // 🔊 자동 발음 로직 (원어민 소리는 그대로 살려둠)
+    if (window.speechSynthesis) {
         window.speechSynthesis.cancel();
-        const utter = new SpeechSynthesisUtterance(currentSessionWords[currentIndex].word);
+        const utter = new SpeechSynthesisUtterance(current.word);
         utter.lang = 'en-US';
         utter.rate = 0.9;
         window.speechSynthesis.speak(utter);
     }
 }
+
+// 🚨 카드를 터치하면 정답이 보이는 함수
+function revealMeaning() {
+    if (isRevealed) return; // 이미 뒤집혔으면 무시
+    isRevealed = true;
+    
+    // 타이머 멈춤 (여유롭게 O/X 누를 수 있도록 배려)
+    clearInterval(interval);
+    
+    // 뜻 보이기
+    meaningEl.textContent = currentSessionWords[currentIndex].meaning;
+    meaningEl.style.display = "block";
+    
+    // 안내 문구 숨기고 O/X 버튼 보이기
+    actionMsg.style.display = "none";
+    oxButtons.style.display = "grid";
+    cardEl.style.borderColor = "#FF6B3D";
+    cardEl.onclick = null; // 중복 터치 방지
+}
+
+// O 버튼 눌렀을 때
+btnCorrect.onclick = () => {
+    sessionResults.push({
+        word: currentSessionWords[currentIndex].word,
+        meaning: currentSessionWords[currentIndex].meaning,
+        status: "정답"
+    });
+    saveResult(currentSessionWords[currentIndex], "정답");
+    nextWord();
+};
+
+// X 버튼 눌렀을 때
+btnWrong.onclick = () => {
+    sessionResults.push({
+        word: currentSessionWords[currentIndex].word,
+        meaning: currentSessionWords[currentIndex].meaning,
+        status: "오답 (몰랐음)"
+    });
+    saveResult(currentSessionWords[currentIndex], "오답");
+    nextWord();
+};
 
 function startTimer() {
     time = isReviewMode ? 8 : 10;
@@ -168,22 +150,19 @@ function startTimer() {
         time--;
         timerEl.textContent = time;
         if (time <= 3) timerEl.style.color = "red";
+        
+        // 시간 초과 시 강제 오답 처리 후 다음으로
         if (time <= 0) {
             clearInterval(interval);
-            handleTimeUp();
+            sessionResults.push({
+                word: currentSessionWords[currentIndex].word,
+                meaning: currentSessionWords[currentIndex].meaning,
+                status: "시간 초과"
+            });
+            saveResult(currentSessionWords[currentIndex], "오답");
+            nextWord();
         }
     }, 1000);
-}
-
-function handleTimeUp() {
-    sessionResults.push({
-        word: currentSessionWords[currentIndex].word,
-        meaning: currentSessionWords[currentIndex].meaning,
-        correctPos: currentSessionWords[currentIndex].pos,
-        status: "시간 초과 (뜻 오답 또는 발화 안함)"
-    });
-    saveResult(currentSessionWords[currentIndex], "오답");
-    nextWord();
 }
 
 function nextWord() {
@@ -192,16 +171,7 @@ function nextWord() {
         showResults();
         return;
     }
-    
     loadWord();
-    
-    if (recognition) {
-        try { recognition.stop(); } catch(e) {}
-        setTimeout(() => { 
-            try { recognition.start(); } catch(e) {} 
-        }, 300);
-    }
-    
     startTimer();
 }
 
@@ -222,10 +192,6 @@ function saveResult(wordObj, status) {
 
 function showResults() {
     updateLobbyStats();
-    if (recognition) {
-        try { recognition.stop(); } catch(e) {}
-    }
-    
     document.querySelector('.app').style.display = 'none'; 
 
     const totalWords = sessionResults.length;
@@ -242,20 +208,16 @@ function showResults() {
 
     let resultHTML = `<div class="card doodle-box" style="padding: 30px 20px; text-align: left; overflow-y: auto; max-height: 80vh;">`;
     resultHTML += `<h2 style="margin-top:0; color:#1F3B34; text-align:center;">학습 결과</h2>`;
-    
     resultHTML += `<div style="text-align:center; margin-bottom: 20px; font-size: 18px; font-weight: 800; color: #FF6B3D;">
         정답률: ${correctWords}/${totalWords} (${accuracy}%)
     </div>`;
-
     resultHTML += `<ul style="list-style:none; padding:0; color:#1F3B34;">`;
 
     sessionResults.forEach(res => {
         let color = res.status === "정답" ? "#2ecc71" : "#e74c3c";
-        let posKo = res.correctPos === 'noun' ? '명사' : res.correctPos === 'verb' ? '동사' : '형용사';
-        
         resultHTML += `
             <li style="border-bottom: 2px dashed rgba(31, 59, 52, 0.2); padding: 15px 0;">
-                <strong style="font-size: 22px;">${res.word}</strong> <span style="font-size: 14px; opacity:0.8;">(${res.meaning} / ${posKo})</span><br>
+                <strong style="font-size: 22px;">${res.word}</strong> <span style="font-size: 14px; opacity:0.8;">(${res.meaning})</span><br>
                 <div style="margin-top: 5px; color:${color}; font-weight:800; font-size: 16px;">${res.status}</div>
             </li>
         `;
@@ -309,41 +271,6 @@ function showResults() {
     };
 }
 
-/* ---------- 6. 버튼 이벤트 & 복습 로직 ---------- */
-buttons.forEach(btn => {
-    btn.onclick = () => {
-        if (!hasSpoken || btn.disabled) return;
-        
-        buttons.forEach(b => b.disabled = true); 
-        clearInterval(interval);
-        
-        const selected = btn.dataset.pos;
-        const correct = currentSessionWords[currentIndex].pos;
-        
-        if (selected === correct) {
-            btn.style.backgroundColor = "#2ecc71";
-            sessionResults.push({
-                word: currentSessionWords[currentIndex].word,
-                meaning: currentSessionWords[currentIndex].meaning,
-                correctPos: correct,
-                status: "정답"
-            });
-            saveResult(currentSessionWords[currentIndex], "정답");
-        } else {
-            btn.style.backgroundColor = "#e74c3c";
-            sessionResults.push({
-                word: currentSessionWords[currentIndex].word,
-                meaning: currentSessionWords[currentIndex].meaning,
-                correctPos: correct,
-                status: "품사 오답"
-            });
-            saveResult(currentSessionWords[currentIndex], "오답");
-        }
-        
-        setTimeout(() => nextWord(), 800);
-    };
-});
-
 function startSession(dayKey) {
     const lobby = document.getElementById('startOverlay');
     if (lobby) lobby.style.display = "none";
@@ -361,12 +288,8 @@ function startSession(dayKey) {
 
     currentIndex = 0;
     sessionResults = [];
-    hasSpoken = false;
-
+    
     loadWord();
-    if (recognition) {
-        try { recognition.start(); } catch(err) {}
-    }
     startTimer();
 }
 
@@ -382,21 +305,18 @@ function startReview() {
     currentDayKey = null; 
     currentIndex = 0;
     sessionResults = [];
-    hasSpoken = false;
 
     const lobby = document.getElementById('startOverlay');
     if (lobby) lobby.style.display = "none";
     document.querySelector('.app').style.display = "block";
 
     loadWord();
-    if (recognition) {
-        try { recognition.start(); } catch(err) {}
-    }
     startTimer();
 }
 
-if (startBtn) {
-    startBtn.addEventListener("click", function(e) {
+const mainStartBtn = document.getElementById("startBtn");
+if (mainStartBtn) {
+    mainStartBtn.addEventListener("click", function(e) {
         e.preventDefault();
         startSession(null);
     }, { passive: false });
@@ -412,7 +332,6 @@ document.querySelectorAll('.start-day-btn').forEach(btn => {
 document.getElementById('quitBtn').addEventListener('click', () => {
     if(confirm("학습을 중단하시겠습니까? 지금까지 푼 내용만 채점됩니다.")) {
         clearInterval(interval);
-        if(recognition) { try { recognition.stop(); } catch(e){} }
         showResults();
     }
 });
