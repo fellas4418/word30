@@ -9,84 +9,96 @@
 </head>
 <body>
     <div id="registrationModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center;">
-        <div style="background: white; padding: 30px; border-radius: 15px; width: 80%; max-width: 400px; text-align: center;">
+        <div class="doodle-box" style="background: white; width: 85%; max-width: 400px; text-align: center; padding: 30px;">
             <h2 style="color: #1F3B34; margin-top: 0;">환영합니다!</h2>
             <p style="font-size: 14px; color: #666; margin-bottom: 20px;">결과 리포트에 표시될 이름을 적어주세요.</p>
-            <input type="text" id="userName" placeholder="이름 (필수)" style="width: 100%; padding: 10px; margin-bottom: 10px; border: 2px solid #ddd; border-radius: 8px; box-sizing: border-box;">
-            <input type="text" id="userContact" placeholder="연락처 입력 시 VOD 할인 혜택!" style="width: 100%; padding: 10px; margin-bottom: 15px; border: 2px solid #ddd; border-radius: 8px; box-sizing: border-box;">
-            <label style="display: block; text-align: left; font-size: 12px; margin-bottom: 20px; color: #555;">
-                <input type="checkbox" id="privacyConsent"> [필수] 개인정보 수집 및 이벤트 알림에 동의합니다.
+            
+            <input type="text" id="userName" placeholder="이름 (필수)" style="width: 100%; padding: 12px; margin-bottom: 12px; border: 3px solid #2C3639; border-radius: 10px; box-sizing: border-box; font-size: 16px;">
+            <input type="text" id="userContact" placeholder="연락처 (혜택 전송용)" style="width: 100%; padding: 12px; margin-bottom: 15px; border: 3px solid #2C3639; border-radius: 10px; box-sizing: border-box; font-size: 16px;">
+            
+            <label style="display: block; text-align: left; font-size: 13px; margin-bottom: 20px; color: #555; cursor: pointer;">
+                <input type="checkbox" id="privacyConsent"> [필수] 개인정보 수집 및 이용에 동의합니다.
             </label>
-            <button id="saveUserBtn" class="doodle-btn" style="width: 100%; background-color: #FF6B3D; color: white; border: none; padding: 15px; border-radius: 10px; font-weight: bold; cursor: pointer;">학습 시작하기</button>
+            
+            <button id="saveUserBtn" class="doodle-btn primary-btn" style="padding: 15px; font-size: 18px;">학습 시작하기</button>
         </div>
     </div>
 
-    <div class="app" style="display: none;">
-        <div class="progress" style="display: flex; justify-content: space-between; align-items: center;">
-            <span class="doodle-badge">남은 문제: <span id="remaining">30</span></span>
-            <button id="quitBtn" style="background: none; border: 2px solid #2C3639; border-radius: 8px; padding: 4px 10px; font-weight: bold; cursor: pointer; color: #2C3639;">중단하기</button>
+    <div class="app" style="display: none; width: 95%; max-width: 400px; margin: 0 auto; padding-top: 20px;">
+        <div class="progress" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <span class="doodle-badge">남은 단어: <span id="remaining">0</span></span>
+            <button id="quitBtn" style="background:none; border:2px solid #2C3639; border-radius:8px; padding:4px 12px; font-weight:bold; cursor:pointer; color:#2C3639;">그만하기</button>
         </div>
-    
-        <div class="card doodle-box" id="wordCard" style="cursor: pointer; padding-bottom: 40px; position: relative;">
-            <div id="word" class="word" style="margin-bottom: 10px;">준비 중...</div>
-            <div id="meaning" style="display: none; font-size: 26px; color: #FF6B3D; font-weight: 900; margin-top: 15px;"></div>
-            <div id="timer" class="timer" style="position: absolute; bottom: 15px; left: 0; right: 0;">10</div>
+
+        <div class="card doodle-box" id="wordCard" style="cursor: pointer; padding: 80px 20px; position: relative; text-align: center; min-height: 200px; display: flex; flex-direction: column; justify-content: center;">
+            <div id="reviewTag" class="review-tag" style="display:none;">🔄 복습</div>
+            
+            <button id="btnStar" title="어려운 단어" style="position:absolute; top:15px; right:15px; background:none; border:none; font-size:32px; cursor:pointer; opacity:0.3; z-index:10; transition: 0.2s;">⭐</button>
+            
+            <div id="word" class="word" style="font-size: 48px; font-weight: 900;">준비 중...</div>
+            <div id="meaning" style="display: none; font-size: 28px; color: #FF6B3D; font-weight: 900; margin-top: 20px;"></div>
+            
+            <div id="timer" class="timer" style="position: absolute; bottom: 20px; left: 0; right: 0; font-size: 24px;">10</div>
         </div>
-    
-        <div id="actionMsg" style="text-align: center; margin-top: 20px; font-size: 18px; font-weight: bold; color: #1F3B34; background: #f1f2f6; padding: 15px; border-radius: 10px; border: 2px dashed #ccc;">
-            👆 뜻을 떠올리고 카드를 터치하세요!
+
+        <div id="actionMsg" class="doodle-box" style="padding:15px; border-style:dashed; background:rgba(255,255,255,0.5); text-align:center; font-weight:bold;">
+            👆 뜻을 생각한 후 카드를 터치하세요!
         </div>
 
         <div id="oxButtons" style="display: none; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px;">
-            <button id="btnWrong" class="doodle-btn" style="background-color: #e74c3c; color: white; font-size: 20px; padding: 15px; border: none; border-radius: 12px; font-weight: 900; cursor: pointer;">❌ 몰랐다</button>
-            <button id="btnCorrect" class="doodle-btn" style="background-color: #2ecc71; color: white; font-size: 20px; padding: 15px; border: none; border-radius: 12px; font-weight: 900; cursor: pointer;">⭕ 알았다</button>
+            <button id="btnWrong" class="doodle-btn" style="background-color: #e74c3c; color: white; padding: 18px; font-size: 20px;">❌ 몰랐다</button>
+            <button id="btnCorrect" class="doodle-btn" style="background-color: #2ecc71; color: white; padding: 18px; font-size: 20px;">⭕ 알았다</button>
         </div>
     </div>
-    
-    <div id="startOverlay" class="lobby-overlay">
+
+    <div id="startOverlay" class="lobby-overlay" style="display: flex;">
         <div class="lobby-container">
             <div class="header-section text-center">
                 <h1 class="brand-title">Trigger<br>Voca</h1>
             </div>
 
+            <div class="doodle-box" style="padding: 16px; margin-bottom: 20px;">
+                <p style="margin: 0 0 10px 0; font-weight: 800; font-size: 14px; color: #888; text-transform: uppercase;">학습 레벨 선택</p>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <button id="midTab" class="doodle-btn level-btn active-level" data-level="mid">📚 중등 기초</button>
+                    <button id="highTab" class="doodle-btn level-btn" data-level="high">🎓 고등 심화</button>
+                </div>
+            </div>
+
             <div class="doodle-box main-action-card text-center">
-                <img src="https://cdn-icons-png.flaticon.com/512/2941/2941566.png" alt="book" class="deco-icon">
-                <h2>오늘의 학습</h2>
-                <p>목표 단어: <strong>30개</strong></p>
+                <img src="https://cdn-icons-png.flaticon.com/512/2941/2941566.png" style="width:50px; margin-bottom:10px;">
+                <h2 id="levelTitle" style="margin: 5px 0;">오늘의 학습</h2>
+                <p style="margin-bottom: 20px;">목표 단어: <strong id="wordGoal">25개</strong></p>
                 <button id="startBtn" class="doodle-btn primary-btn">학습 시작하기</button>
             </div>
 
-            <div class="grid-2col">
-                <div class="doodle-box mini-card text-center">
-                    <h3>내 단어장</h3>
-                    <p>120 단어</p>
+            <div class="grid-2col" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="doodle-box text-center" style="padding: 15px;">
+                    <h3 style="font-size:15px; color:#FF6B4A; margin:0;">내 단어장</h3>
+                    <p id="totalCount" style="margin:5px 0 0 0; font-weight:900; font-size:18px;">175 단어</p>
                 </div>
-                <div class="doodle-box mini-card text-center" onclick="startReview()" style="cursor: pointer;">
-                    <h3>오답 노트</h3>
-                    <p id="weakListCount">0 단어</p>
+                <div class="doodle-box text-center" onclick="startReview()" style="cursor: pointer; padding: 15px;">
+                    <h3 style="font-size:15px; color:#FF6B4A; margin:0;">오답/별표</h3>
+                    <p id="weakCount" style="margin:5px 0 0 0; font-weight:900; font-size:18px;">0 단어</p>
                 </div>
             </div>
 
-            <div id="curriculumSection" class="doodle-box list-card" style="margin-top: 20px;">
-                <h3>📅 트리거 보카 매일 학습</h3>
-                <ul class="curriculum-list">
-                    <li>
-                        <span>Day 1. 문장의 뼈대 동사</span>
-                        <button class="status-badge start-day-btn" data-day="day1">시작</button>
-                    </li>
-                    <li>
-                        <span>Day 2. 살을 붙이는 수식어</span>
-                        <button id="btn-day2" class="status-badge start-day-btn" data-day="day2" style="background-color: #95a5a6;" disabled>🔒 잠김</button>
-                    </li>
-                    <li>
-                        <span>Day 3. 시제와 조동사</span>
-                        <button class="status-badge waiting" disabled>대기</button>
-                    </li>
+            <div class="doodle-box list-card" style="margin-top: 10px;">
+                <h3 style="margin-top:0; border-bottom:2px dashed #ddd; padding-bottom:10px;">📅 7일 루틴 (80% 통과제)</h3>
+                <ul class="curriculum-list" style="list-style: none; padding: 0; margin: 0;">
+                    <li><span>Day 1</span><button id="btn-day1" class="status-badge start-day-btn" data-day="day1">시작</button></li>
+                    <li><span>Day 2</span><button id="btn-day2" class="status-badge start-day-btn" data-day="day2" disabled>🔒 잠김</button></li>
+                    <li><span>Day 3</span><button id="btn-day3" class="status-badge start-day-btn" data-day="day3" disabled>🔒 잠김</button></li>
+                    <li><span>Day 4</span><button id="btn-day4" class="status-badge start-day-btn" data-day="day4" disabled>🔒 잠김</button></li>
+                    <li><span>Day 5</span><button id="btn-day5" class="status-badge start-day-btn" data-day="day5" disabled>🔒 잠김</button></li>
+                    <li><span>Day 6</span><button id="btn-day6" class="status-badge start-day-btn" data-day="day6" disabled>🔒 잠김</button></li>
+                    <li><span>Day 7</span><button id="btn-day7" class="status-badge start-day-btn" data-day="day7" disabled>🔒 잠김</button></li>
+                    <li id="li-day8" style="display:none; background: #fff9db;"><span>Day 8 🏆</span><button id="btn-day8" class="status-badge start-day-btn" data-day="day8" disabled>총복습</button></li>
                 </ul>
             </div>
         </div>
     </div>
-    
-    <script src="js/app.js?v=11"></script>
+
+    <script src="js/app.js?v=20260304"></script>
 </body>
 </html>
